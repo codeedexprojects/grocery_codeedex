@@ -3,7 +3,7 @@ const MainCategory = require('../../../Models/Admin/MainCategories/mainCategoryM
 // Create new category
 const createCategory = async (req, res) => {
   try {
-    const { name, status } = req.body;
+    const { name, status, primaryColor, secondaryColor } = req.body;
     const image = req.file?.filename;
 
     if (!name || !image) {
@@ -14,7 +14,7 @@ const createCategory = async (req, res) => {
       return res.status(400).json({ message: 'Category already exists' });
     }
 
-    const category = new MainCategory({ name, image, status });
+    const category = new MainCategory({ name, image, status, primaryColor, secondaryColor });
     await category.save();
 
     res.status(201).json({ message: 'Category created successfully', category });
@@ -48,7 +48,7 @@ const getCategoryById = async (req, res) => {
 // Update category
 const updateCategory = async (req, res) => {
   try {
-    const { name, status } = req.body;
+    const { name, status, primaryColor, secondaryColor } = req.body;
     const image = req.file?.filename;
 
     const category = await MainCategory.findById(req.params.id);
@@ -56,6 +56,8 @@ const updateCategory = async (req, res) => {
 
     category.name = name || category.name;
     category.status = status !== undefined ? status : category.status;
+    category.primaryColor = primaryColor || category.primaryColor;
+    category.secondaryColor = secondaryColor || category.secondaryColor;
     if (image) category.image = image;
 
     await category.save();

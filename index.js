@@ -17,7 +17,7 @@ const adminTimeSaleRoutes=require('./Routes/Admin/TimeSale/timeSaleRoutes')
 
 const userAuthRoutes=require('./Routes/User/Auth/authRoutes')
 const userProductRoutes = require('./Routes/User/Products/productRoutes')
-
+const userMainCategoryRoutes=require('./Routes/User/MainCategory/mainCategoryRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -31,6 +31,7 @@ app.use('/api/admin/time-sale',adminTimeSaleRoutes)
 
 app.use('/api/user/auth',userAuthRoutes)
 app.use('/api/user/product',userProductRoutes)
+app.use('/api/user/main-category',userMainCategoryRoutes)
 
 
 require('./DB/connection');

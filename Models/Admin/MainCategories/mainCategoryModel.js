@@ -11,6 +11,12 @@ const mainCategorySchema = new mongoose.Schema({
     type: String,
     required: [true, 'Image is required']
   },
+  primaryColor:{
+    type:String,
+  },
+  secondaryColor:{
+    type:String,
+  },
   status: {
     type: Boolean,
     default: true
