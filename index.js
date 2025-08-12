@@ -20,6 +20,7 @@ const userAuthRoutes=require('./Routes/User/Auth/authRoutes')
 const userProductRoutes = require('./Routes/User/Products/productRoutes')
 const userMainCategoryRoutes=require('./Routes/User/MainCategory/mainCategoryRoutes')
 const userHomeGifRoutes=require('./Routes/User/Carousal/homeGifRoutes')
+const userCategoryRoutes=require('./Routes/User/Category/categoryRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -36,13 +37,13 @@ app.use('/api/user/auth',userAuthRoutes)
 app.use('/api/user/product',userProductRoutes)
 app.use('/api/user/main-category',userMainCategoryRoutes)
 app.use('/api/user/home-gif',userHomeGifRoutes)
+app.use('/api/user/category',userCategoryRoutes)
 
 
 
 require('./DB/connection');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// Server Configuration
 const PORT = process.env.PORT || 3005;
-app.listen(PORT, () => {
+app.listen(PORT , () => {
     console.log(`Server started listening at PORT ${PORT}`);
 });

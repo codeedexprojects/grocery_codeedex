@@ -16,7 +16,6 @@ const sendOtp = (number, otp) => {
   console.log(`OTP for ${number}: ${otp}`); // Dev only
 };
 
-// 📌 LOGIN OR REGISTER
 const loginOrRegister = async (req, res) => {
   try {
     const { name, number } = req.body;
