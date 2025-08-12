@@ -14,10 +14,12 @@ const adminsubCategoryRoutes=require('./Routes/Admin/SubCategory/subCategoryRout
 const adminProductRoutes=require('./Routes/Admin/Products/productRoutes')
 const adminCarousalRoutes=require('./Routes/Admin/Carousal/carousalRoutes')
 const adminTimeSaleRoutes=require('./Routes/Admin/TimeSale/timeSaleRoutes')
+const adminHomeGifRoutes=require('./Routes/Admin/Carousal/homeGifRoutes')
 
 const userAuthRoutes=require('./Routes/User/Auth/authRoutes')
 const userProductRoutes = require('./Routes/User/Products/productRoutes')
 const userMainCategoryRoutes=require('./Routes/User/MainCategory/mainCategoryRoutes')
+const userHomeGifRoutes=require('./Routes/User/Carousal/homeGifRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -27,11 +29,14 @@ app.use('/api/admin/subcategory',adminsubCategoryRoutes)
 app.use('/api/admin/product', adminProductRoutes)
 app.use('/api/admin/carousal',adminCarousalRoutes)
 app.use('/api/admin/time-sale',adminTimeSaleRoutes)
+app.use('/api/admin/home-gif',adminHomeGifRoutes)
 
 
 app.use('/api/user/auth',userAuthRoutes)
 app.use('/api/user/product',userProductRoutes)
 app.use('/api/user/main-category',userMainCategoryRoutes)
+app.use('/api/user/home-gif',userHomeGifRoutes)
+
 
 
 require('./DB/connection');

@@ -1,19 +1,18 @@
-// models/Gif.js
 const mongoose = require('mongoose');
 
-const gifSchema = new mongoose.Schema({
-  filePath: {
-    type: String,
-    required: true
-  },
-  fileName: {
-    type: String,
-    required: true
-  },
-  uploadedAt: {
-    type: Date,
-    default: Date.now
-  }
+const homeCarouselSchema = new mongoose.Schema({
+  title: { type: String, required: true }, 
+  backgroundImage: { type: String, required: true }, 
+  gifs: [{ type: String }], 
+
+  sections: [
+    {
+      subTitle: { type: String, required: true },
+      productIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }]
+    }
+  ],
+
+  createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Gif', gifSchema);
+module.exports = mongoose.model('HomeCarousel', homeCarouselSchema);
