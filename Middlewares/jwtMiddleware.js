@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const verifyAdminToken = (allowedRoles = []) => {
+const verifyAdminToken = (allowedRoles = ["user"]) => {
 
   return (req, res, next) => {
 

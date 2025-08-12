@@ -16,12 +16,16 @@ const adminCarouselRoutes=require('./Routes/Admin/Carousel/carouselRoutes')
 const adminTimeSaleRoutes=require('./Routes/Admin/TimeSale/timeSaleRoutes')
 const adminHomeGifRoutes=require('./Routes/Admin/Carousel/homeGifRoutes')
 const adminUserManagementRoutes = require ('./Routes/Admin/UserManagement/userManagementRoutes')
+const adminCoinSettingsRoutes = require ('./Routes/Admin/CoinSetting/CoinSettingRoute')
+
 
 const userAuthRoutes=require('./Routes/User/Auth/authRoutes')
 const userProductRoutes = require('./Routes/User/Products/productRoutes')
 const userMainCategoryRoutes=require('./Routes/User/MainCategory/mainCategoryRoutes')
 const userHomeGifRoutes=require('./Routes/User/Carousel/homeGifRoutes')
 const userCarouselRoutes = require('./Routes/User/Carousel/carouselRoutes')
+const userProfileRoutes = require('./Routes/User/Profile/profileRoute')
+
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -33,12 +37,15 @@ app.use('/api/admin/carousel',adminCarouselRoutes)
 app.use('/api/admin/time-sale',adminTimeSaleRoutes)
 app.use('/api/admin/home-gif',adminHomeGifRoutes)
 app.use('/api/admin/user-management', adminUserManagementRoutes)
+app.use('/api/admin/coin-setting', adminCoinSettingsRoutes)
+
 
 app.use('/api/user/auth',userAuthRoutes)
 app.use('/api/user/product',userProductRoutes)
 app.use('/api/user/main-category',userMainCategoryRoutes)
 app.use('/api/user/home-gif',userHomeGifRoutes)
 app.use('/api/user/carousel', userCarouselRoutes)
+app.use('/api/user/profile', userProfileRoutes)
 
 
 

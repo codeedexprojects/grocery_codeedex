@@ -4,9 +4,9 @@ const jwt = require('jsonwebtoken');
 // Generate 6-digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-const generateToken = (userId) => {
+const generateToken = (userId, role) => {
   return jwt.sign(
-    { id: userId },
+    { id: userId, role },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '30d' }
   );
@@ -89,7 +89,7 @@ const verifyOtp = async (req, res) => {
     user.otpExpiresAt = null;
     await user.save();
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.role);
 
     res.status(200).json({
       success: true,
