@@ -8,7 +8,7 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 const generateToken = (userId, number) => {
   return jwt.sign(
     { 
-    _id: userId,
+      _id: userId,
       number: number,
       role: 'user' 
     },
