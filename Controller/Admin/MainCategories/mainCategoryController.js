@@ -4,17 +4,17 @@ const MainCategory = require('../../../Models/Admin/MainCategories/mainCategoryM
 const createCategory = async (req, res) => {
   try {
     const { name, status, primaryColor, secondaryColor } = req.body;
-    const image = req.file?.filename;
+    const icon = req.file?.filename;
 
-    if (!name || !image) {
-      return res.status(400).json({ message: 'Name and image are required' });
+    if (!name || !icon) {
+      return res.status(400).json({ message: 'Name and icon are required' });
     }
     const existing = await MainCategory.findOne({ name });
     if (existing) {
       return res.status(400).json({ message: 'Category already exists' });
     }
 
-    const category = new MainCategory({ name, image, status, primaryColor, secondaryColor });
+    const category = new MainCategory({ name, icon, status, primaryColor, secondaryColor });
     await category.save();
 
     res.status(201).json({ message: 'Category created successfully', category });
@@ -49,7 +49,7 @@ const getCategoryById = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { name, status, primaryColor, secondaryColor } = req.body;
-    const image = req.file?.filename;
+    const icon = req.file?.filename;
 
     const category = await MainCategory.findById(req.params.id);
     if (!category) return res.status(404).json({ message: 'Category not found' });
@@ -58,7 +58,7 @@ const updateCategory = async (req, res) => {
     category.status = status !== undefined ? status : category.status;
     category.primaryColor = primaryColor || category.primaryColor;
     category.secondaryColor = secondaryColor || category.secondaryColor;
-    if (image) category.image = image;
+    if (icon) category.icon = icon;
 
     await category.save();
     res.json({ message: 'Category updated', category });

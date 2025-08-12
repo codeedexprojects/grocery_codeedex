@@ -7,7 +7,7 @@ const mainCategorySchema = new mongoose.Schema({
     trim: true,
     unique: true
   },
-  image: {
+  icon: {
     type: String,
     required: [true, 'Image is required']
   },

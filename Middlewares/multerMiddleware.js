@@ -12,7 +12,8 @@ const fileFilter = (req, file, cb) => {
     'image/png',
     'image/jpg',
     'image/jpeg',
-    'image/gif', // ✅ Allow GIF
+    'image/gif', 
+    'image/svg+xml',
     'video/mp4'
   ];
   

@@ -4,9 +4,14 @@ const jwt = require('jsonwebtoken');
 // Generate 6-digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-const generateToken = (userId) => {
+// Updated token generation with role
+const generateToken = (userId, number) => {
   return jwt.sign(
-    { id: userId },
+    { 
+    _id: userId,
+      number: number,
+      role: 'user' 
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '30d' }
   );
@@ -64,7 +69,7 @@ const loginOrRegister = async (req, res) => {
   }
 };
 
-// 📌 VERIFY OTP
+// Verify OTP with updated token response
 const verifyOtp = async (req, res) => {
   try {
     const { userId, otp } = req.body;
@@ -89,7 +94,7 @@ const verifyOtp = async (req, res) => {
     user.otpExpiresAt = null;
     await user.save();
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.number);
 
     res.status(200).json({
       success: true,
@@ -98,7 +103,8 @@ const verifyOtp = async (req, res) => {
         _id: user._id,
         name: user.name,
         number: user.number,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        role: 'user' 
       },
       token
     });

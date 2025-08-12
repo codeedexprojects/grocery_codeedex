@@ -21,6 +21,7 @@ const userProductRoutes = require('./Routes/User/Products/productRoutes')
 const userMainCategoryRoutes=require('./Routes/User/MainCategory/mainCategoryRoutes')
 const userHomeGifRoutes=require('./Routes/User/Carousel/homeGifRoutes')
 const userCarouselRoutes = require('./Routes/User/Carousel/carouselRoutes')
+const userWishlistRoutes=require('./Routes/User/Wishlist/wishlistRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -38,7 +39,7 @@ app.use('/api/user/product',userProductRoutes)
 app.use('/api/user/main-category',userMainCategoryRoutes)
 app.use('/api/user/home-gif',userHomeGifRoutes)
 app.use('/api/user/carousel', userCarouselRoutes)
-
+app.use('/api/user/wishlist',userWishlistRoutes)
 
 
 require('./DB/connection');
