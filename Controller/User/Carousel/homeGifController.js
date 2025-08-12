@@ -1,4 +1,4 @@
-const HomeCarousel = require('../../../Models/Admin/Carousal/homeGifModel');
+const HomeCarousel = require('../../../Models/Admin/Carousel/homeGifModel');
 const fs = require('fs');
 
 exports.getAllCarousels = async (req, res) => {

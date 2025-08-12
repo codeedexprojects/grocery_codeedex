@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const carouselController = require('../../../Controller/Admin/Carousal/homeGifController');
+const carouselController = require('../../../Controller/Admin/Carousel/homeGifController');
 const { upload } = require('../../../Middlewares/multerMiddleware');
 
 router.post(

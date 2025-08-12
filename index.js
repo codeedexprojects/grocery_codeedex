@@ -12,15 +12,15 @@ const adminMainCategoryRoutes = require('./Routes/Admin/MainCategories/mainCateg
 const adminCategoryRoutes=require('./Routes/Admin/Category/categoryRoutes')
 const adminsubCategoryRoutes=require('./Routes/Admin/SubCategory/subCategoryRoutes')
 const adminProductRoutes=require('./Routes/Admin/Products/productRoutes')
-const adminCarousalRoutes=require('./Routes/Admin/Carousal/carousalRoutes')
+const adminCarouselRoutes=require('./Routes/Admin/Carousel/carouselRoutes')
 const adminTimeSaleRoutes=require('./Routes/Admin/TimeSale/timeSaleRoutes')
-const adminHomeGifRoutes=require('./Routes/Admin/Carousal/homeGifRoutes')
+const adminHomeGifRoutes=require('./Routes/Admin/Carousel/homeGifRoutes')
 
 const userAuthRoutes=require('./Routes/User/Auth/authRoutes')
 const userProductRoutes = require('./Routes/User/Products/productRoutes')
 const userMainCategoryRoutes=require('./Routes/User/MainCategory/mainCategoryRoutes')
-const userHomeGifRoutes=require('./Routes/User/Carousal/homeGifRoutes')
-const userCategoryRoutes=require('./Routes/User/Category/categoryRoutes')
+const userHomeGifRoutes=require('./Routes/User/Carousel/homeGifRoutes')
+const userCarouselRoutes = require('./Routes/User/Carousel/carouselRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -28,7 +28,7 @@ app.use('/api/admin/main-category', adminMainCategoryRoutes);
 app.use('/api/admin/category', adminCategoryRoutes)
 app.use('/api/admin/subcategory',adminsubCategoryRoutes)
 app.use('/api/admin/product', adminProductRoutes)
-app.use('/api/admin/carousal',adminCarousalRoutes)
+app.use('/api/admin/carousel',adminCarouselRoutes)
 app.use('/api/admin/time-sale',adminTimeSaleRoutes)
 app.use('/api/admin/home-gif',adminHomeGifRoutes)
 
@@ -37,13 +37,14 @@ app.use('/api/user/auth',userAuthRoutes)
 app.use('/api/user/product',userProductRoutes)
 app.use('/api/user/main-category',userMainCategoryRoutes)
 app.use('/api/user/home-gif',userHomeGifRoutes)
-app.use('/api/user/category',userCategoryRoutes)
+app.use('/api/user/carousel', userCarouselRoutes)
 
 
 
 require('./DB/connection');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Server Configuration
 const PORT = process.env.PORT || 3005;
-app.listen(PORT , () => {
+app.listen(PORT, () => {
     console.log(`Server started listening at PORT ${PORT}`);
 });
