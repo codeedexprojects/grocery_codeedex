@@ -15,6 +15,7 @@ const adminProductRoutes=require('./Routes/Admin/Products/productRoutes')
 const adminCarouselRoutes=require('./Routes/Admin/Carousel/carouselRoutes')
 const adminTimeSaleRoutes=require('./Routes/Admin/TimeSale/timeSaleRoutes')
 const adminHomeGifRoutes=require('./Routes/Admin/Carousel/homeGifRoutes')
+const adminUserManagementRoutes = require ('./Routes/Admin/UserManagement/userManagementRoutes')
 
 const userAuthRoutes=require('./Routes/User/Auth/authRoutes')
 const userProductRoutes = require('./Routes/User/Products/productRoutes')
@@ -31,7 +32,7 @@ app.use('/api/admin/product', adminProductRoutes)
 app.use('/api/admin/carousel',adminCarouselRoutes)
 app.use('/api/admin/time-sale',adminTimeSaleRoutes)
 app.use('/api/admin/home-gif',adminHomeGifRoutes)
-
+app.use('/api/admin/user-management', adminUserManagementRoutes)
 
 app.use('/api/user/auth',userAuthRoutes)
 app.use('/api/user/product',userProductRoutes)
