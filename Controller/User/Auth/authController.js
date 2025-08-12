@@ -12,34 +12,36 @@ const generateToken = (userId) => {
   );
 };
 
-// Mock OTP sender
 const sendOtp = (number, otp) => {
-  console.log(`OTP for ${number}: ${otp}`); // For dev only
+  console.log(`OTP for ${number}: ${otp}`); // Dev only
 };
 
-// 📌 SINGLE LOGIN/REGISTER API
 const loginOrRegister = async (req, res) => {
   try {
-    const { number } = req.body;
+    const { name, number } = req.body;
 
-    if (!number) {
+    if (!number || !name) {
       return res.status(400).json({
         success: false,
-        message: 'Phone number is required'
+        message: 'Name and phone number are required'
       });
     }
 
     let user = await User.findOne({ number });
 
-    // If user doesn't exist, create a new one
     if (!user) {
-      user = new User({ number });
+      // New User Registration
+      user = new User({ name, number });
+    } else {
+      // Existing User → Update name if different
+      if (user.name !== name) {
+        user.name = name;
+      }
     }
 
-    // Generate and assign OTP
     const otp = generateOTP();
     user.otp = otp;
-    user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+    user.otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
     await user.save();
 
     sendOtp(number, otp);
@@ -94,6 +96,7 @@ const verifyOtp = async (req, res) => {
       message: 'Number verified successfully',
       user: {
         _id: user._id,
+        name: user.name,
         number: user.number,
         isVerified: user.isVerified
       },

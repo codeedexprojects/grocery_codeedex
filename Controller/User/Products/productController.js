@@ -25,7 +25,29 @@ const getProductById = async (req, res) => {
   }
 };
 
+const getProductsByMainCategory = async (req, res) => {
+  try {
+    const { mainCategoryId } = req.params;
+
+    const products = await Product.find({ mainCategory: mainCategoryId })
+      .populate('mainCategory', 'name')
+      .populate('category', 'name')
+      .populate('subCategory', 'name');
+
+    if (products.length === 0) {
+      return res.status(404).json({ message: 'No products found for this main category' });
+    }
+
+    res.json(products);
+  } catch (err) {
+    console.error('Error fetching products by main category:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
 module.exports = {
   getAllProducts,
   getProductById,
+  getProductsByMainCategory
 };
