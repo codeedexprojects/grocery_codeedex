@@ -13,6 +13,13 @@ const userSchema = new mongoose.Schema({
   referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   coins: { type: Number, default: 0 },
   role: { type: String, default: 'user' },
+  devices: [
+    {
+      deviceName: String,     // e.g., "Chrome on Windows"
+      ip: String,             // user IP
+      lastLogin: Date         // when the user last logged in
+    }
+  ]
 }, { timestamps: true });
 
 // Generate referral code before saving

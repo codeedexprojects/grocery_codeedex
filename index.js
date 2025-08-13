@@ -8,7 +8,6 @@ app.use(cors());
 app.use(express.json({ limit: "500mb" }));
 app.use(express.urlencoded({ limit: "500mb", extended: true }));
 
-// Admin Routes
 const adminAuthRoutes = require('./Routes/Admin/Auth/authRoutes');
 const adminMainCategoryRoutes = require('./Routes/Admin/MainCategories/mainCategoryRoutes');
 const adminCategoryRoutes = require('./Routes/Admin/Category/categoryRoutes');
@@ -20,7 +19,7 @@ const adminHomeGifRoutes = require('./Routes/Admin/Carousel/homeGifRoutes');
 const adminUserManagementRoutes = require('./Routes/Admin/UserManagement/userManagementRoutes');
 const adminCoinSettingsRoutes = require('./Routes/Admin/CoinSetting/CoinSettingRoute');
 
-// User Routes
+
 const userAuthRoutes = require('./Routes/User/Auth/authRoutes');
 const userProductRoutes = require('./Routes/User/Products/productRoutes');
 const userMainCategoryRoutes = require('./Routes/User/MainCategory/mainCategoryRoutes');
@@ -28,8 +27,9 @@ const userHomeGifRoutes = require('./Routes/User/Carousel/homeGifRoutes');
 const userCarouselRoutes = require('./Routes/User/Carousel/carouselRoutes');
 const userWishlistRoutes = require('./Routes/User/Wishlist/wishlistRoutes');
 const userProfileRoutes = require('./Routes/User/Profile/profileRoute');
+const userCartRoutes= require('./Routes/User/Cart/cartRoutes')
 
-// Admin API endpoints
+
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/main-category', adminMainCategoryRoutes);
 app.use('/api/admin/category', adminCategoryRoutes);
@@ -41,7 +41,7 @@ app.use('/api/admin/home-gif', adminHomeGifRoutes);
 app.use('/api/admin/user-management', adminUserManagementRoutes);
 app.use('/api/admin/coin-setting', adminCoinSettingsRoutes);
 
-// User API endpoints
+
 app.use('/api/user/auth', userAuthRoutes);
 app.use('/api/user/product', userProductRoutes);
 app.use('/api/user/main-category', userMainCategoryRoutes);
@@ -49,14 +49,12 @@ app.use('/api/user/home-gif', userHomeGifRoutes);
 app.use('/api/user/carousel', userCarouselRoutes);
 app.use('/api/user/wishlist', userWishlistRoutes);
 app.use('/api/user/profile', userProfileRoutes);
+app.use('/api/user/cart', userCartRoutes)
 
-// Database connection
 require('./DB/connection');
 
-// Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Server Configuration
 const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => {
     console.log(`Server started listening at PORT ${PORT}`);
