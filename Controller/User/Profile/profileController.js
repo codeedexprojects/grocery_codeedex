@@ -22,7 +22,6 @@ exports.updateProfile = async (req, res) => {
   try {
     const { name, email, number } = req.body;
 
-    // Prevent using old deleted accounts' email/number
     const deletedConflict = await DeletedUser.findOne({
       $or: [{ email }, { number }]
     });

@@ -82,12 +82,10 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
     }
 
-    // Mark as verified
     user.isVerified = true;
     user.otp = null;
     user.otpExpiresAt = null;
-
-    // Get device info
+    
     const ua = uaParser(req.headers['user-agent']);
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip;
     const deviceName = `${ua.browser.name || 'Unknown Browser'} on ${ua.os.name || 'Unknown OS'}`;
@@ -102,7 +100,6 @@ const verifyOtp = async (req, res) => {
 
     await user.save();
 
-    // Generate JWT
     const token = generateToken(user._id, user.number);
 
     res.status(200).json({

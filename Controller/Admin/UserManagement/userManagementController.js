@@ -1,9 +1,11 @@
-const User = require('../../../Models/User/Auth/authModel'); // adjust path if needed
+const User = require('../../../Models/User/Auth/authModel'); 
+const Cart = require('../../../Models/User/Cart/cartModel')
+const Wishlist = require('../../../Models/User/Wishlist/wishlistModel')
 
 // Get all users
 exports.getAllUsers = async (req, res) => {
   try {
-    let { page = 1, limit = 10 } = req.query; // default: page 1, 10 per page
+    let { page = 1, limit = 10 } = req.query; 
     page = parseInt(page);
     limit = parseInt(limit);
 
@@ -14,7 +16,6 @@ exports.getAllUsers = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
-
     res.status(200).json({
       totalUsers,
       currentPage: page,
@@ -27,20 +28,34 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-
 // Get user by ID
 exports.getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await User.findById(id);
 
+    
+    const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    const cart = await Cart.findOne({ user: id })
+      .populate({
+        path: 'items.product',
+        select: 'name price offerPrice measurment images weightsAndStocks'
+      });
+    const wishlist = await Wishlist.findOne({ user: id })
+      .populate({
+        path: 'items.product',
+        select: 'name price offerPrice measurment images weightsAndStocks'
+      });
 
-    res.status(200).json(user);
+    res.status(200).json({
+      user,
+      cart: cart || { items: [], totalPrice: 0 },
+      wishlist: wishlist || { items: [] }
+    });
   } catch (err) {
-    console.error('Error fetching user:', err);
+    console.error('Error fetching user details:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -84,4 +99,3 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
