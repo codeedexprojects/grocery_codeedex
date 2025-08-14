@@ -1,14 +1,9 @@
-module.exports = (requiredPermission) => {
+module.exports = function(requiredPermission) {
   return (req, res, next) => {
-    if (!req.admin) {
-      return res.status(403).json({ message: 'Not authenticated' });
-    }
+    const { role, permissions } = req.admin; 
+    if (role === 'admin') return next();
 
-    if (req.admin.role === 'admin') {
-      return next(); 
-    }
-
-    if (!req.admin.permissions.includes(requiredPermission)) {
+    if (!permissions.includes(requiredPermission) && !permissions.includes('*')) {
       return res.status(403).json({ message: 'Permission denied' });
     }
 

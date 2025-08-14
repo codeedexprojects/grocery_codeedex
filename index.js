@@ -20,6 +20,7 @@ const adminUserManagementRoutes = require('./Routes/Admin/UserManagement/userMan
 const adminCoinSettingsRoutes = require('./Routes/Admin/CoinSetting/CoinSettingRoute');
 const adminSubAdminManagement = require('./Routes/Admin/SubAdminManagement/subAdminManagementRoute');
 const adminCouponRoutes = require('./Routes/Admin/Coupon/couponRoutes')
+const adminActivityLogRoutes = require('./Routes/Admin/ActivityLog/activityLogRoute')
 
 
 
@@ -46,6 +47,8 @@ app.use('/api/admin/user-management', adminUserManagementRoutes);
 app.use('/api/admin/coin-setting', adminCoinSettingsRoutes);
 app.use('/api/admin/sub-admin-management', adminSubAdminManagement)
 app.use('/api/admin/coupon', adminCouponRoutes)
+app.use('/api/admin/activity-log', adminActivityLogRoutes)
+
 
 
 app.use('/api/user/auth', userAuthRoutes);
