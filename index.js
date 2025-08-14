@@ -18,6 +18,10 @@ const adminTimeSaleRoutes = require('./Routes/Admin/TimeSale/timeSaleRoutes');
 const adminHomeGifRoutes = require('./Routes/Admin/Carousel/homeGifRoutes');
 const adminUserManagementRoutes = require('./Routes/Admin/UserManagement/userManagementRoutes');
 const adminCoinSettingsRoutes = require('./Routes/Admin/CoinSetting/CoinSettingRoute');
+const adminSubAdminManagement = require('./Routes/Admin/SubAdminManagement/subAdminManagementRoute');
+const adminCouponRoutes = require('./Routes/Admin/Coupon/couponRoutes')
+const adminActivityLogRoutes = require('./Routes/Admin/ActivityLog/activityLogRoute')
+
 
 
 const userAuthRoutes = require('./Routes/User/Auth/authRoutes');
@@ -29,6 +33,8 @@ const userWishlistRoutes = require('./Routes/User/Wishlist/wishlistRoutes');
 const userProfileRoutes = require('./Routes/User/Profile/profileRoute');
 const userCartRoutes= require('./Routes/User/Cart/cartRoutes')
 const userCategoryRoutes = require('./Routes/User/Category/categoryRoutes')
+const userAddressRoutes = require('./Routes/User/Address/addressRoutes')
+
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -41,6 +47,10 @@ app.use('/api/admin/time-sale', adminTimeSaleRoutes);
 app.use('/api/admin/home-gif', adminHomeGifRoutes);
 app.use('/api/admin/user-management', adminUserManagementRoutes);
 app.use('/api/admin/coin-setting', adminCoinSettingsRoutes);
+app.use('/api/admin/sub-admin-management', adminSubAdminManagement)
+app.use('/api/admin/coupon', adminCouponRoutes)
+app.use('/api/admin/activity-log', adminActivityLogRoutes)
+
 
 
 app.use('/api/user/auth', userAuthRoutes);
@@ -52,6 +62,8 @@ app.use('/api/user/wishlist', userWishlistRoutes);
 app.use('/api/user/profile', userProfileRoutes);
 app.use('/api/user/cart', userCartRoutes)
 app.use('/api/user/category',userCategoryRoutes)
+app.use('/api/user/address',userAddressRoutes)
+
 
 require('./DB/connection');
 
