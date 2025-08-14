@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const homeCarouselSchema = new mongoose.Schema({
   backgroundImage: { type: String, required: true },
-  gifs: [{ type: String }],
+  gif: { type: String, required: true }, // only one gif
   createdAt: { type: Date, default: Date.now }
 });
 

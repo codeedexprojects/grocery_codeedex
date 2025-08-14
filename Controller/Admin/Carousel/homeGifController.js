@@ -1,19 +1,25 @@
 const HomeCarousel = require('../../../Models/Admin/Carousel/homeGifModel');
 const fs = require('fs');
 
-// Create Carousel
+// Create Carousel (only one allowed)
 exports.createCarousel = async (req, res) => {
   try {
-    if (!req.files || !req.files.backgroundImage || !req.files.gifs) {
-      return res.status(400).json({ message: 'Background image and GIFs are required' });
+    // Check if a carousel already exists
+    const existingCarousel = await HomeCarousel.findOne();
+    if (existingCarousel) {
+      return res.status(400).json({ message: 'Only one carousel section is allowed. Please update the existing one.' });
+    }
+
+    if (!req.files || !req.files.backgroundImage || !req.files.gif) {
+      return res.status(400).json({ message: 'Background image and GIF are required' });
     }
 
     const backgroundImage = req.files.backgroundImage[0].path;
-    const gifs = req.files.gifs.map(file => file.path);
+    const gif = req.files.gif[0].path;
 
     const newCarousel = new HomeCarousel({
       backgroundImage,
-      gifs
+      gif
     });
 
     await newCarousel.save();
@@ -23,13 +29,16 @@ exports.createCarousel = async (req, res) => {
   }
 };
 
-// Get All Carousels
-exports.getAllCarousels = async (req, res) => {
+// Get Carousel (only one)
+exports.getCarousel = async (req, res) => {
   try {
-    const carousels = await HomeCarousel.find();
-    res.json(carousels);
+    const carousel = await HomeCarousel.findOne();
+    if (!carousel) {
+      return res.status(404).json({ message: 'No carousel found' });
+    }
+    res.json(carousel);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching carousels', error: error.message });
+    res.status(500).json({ message: 'Error fetching carousel', error: error.message });
   }
 };
 
@@ -50,13 +59,11 @@ exports.updateCarousel = async (req, res) => {
       carousel.backgroundImage = req.files.backgroundImage[0].path;
     }
 
-    if (req.files && req.files.gifs) {
-      carousel.gifs.forEach(gifPath => {
-        if (fs.existsSync(gifPath)) {
-          fs.unlinkSync(gifPath);
-        }
-      });
-      carousel.gifs = req.files.gifs.map(file => file.path);
+    if (req.files && req.files.gif) {
+      if (carousel.gif && fs.existsSync(carousel.gif)) {
+        fs.unlinkSync(carousel.gif);
+      }
+      carousel.gif = req.files.gif[0].path;
     }
 
     await carousel.save();
@@ -79,11 +86,9 @@ exports.deleteCarousel = async (req, res) => {
     if (carousel.backgroundImage && fs.existsSync(carousel.backgroundImage)) {
       fs.unlinkSync(carousel.backgroundImage);
     }
-    carousel.gifs.forEach(gifPath => {
-      if (fs.existsSync(gifPath)) {
-        fs.unlinkSync(gifPath);
-      }
-    });
+    if (carousel.gif && fs.existsSync(carousel.gif)) {
+      fs.unlinkSync(carousel.gif);
+    }
 
     await HomeCarousel.findByIdAndDelete(id);
     res.json({ message: 'Carousel deleted successfully' });

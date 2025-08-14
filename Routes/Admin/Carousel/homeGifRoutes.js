@@ -7,18 +7,18 @@ router.post(
   '/create',
   upload.fields([
     { name: 'backgroundImage', maxCount: 1 },
-    { name: 'gifs', maxCount: 10 }
+    { name: 'gif', maxCount: 1 }
   ]),
   carouselController.createCarousel
 );
 
-router.get('/get', carouselController.getAllCarousels);
+router.get('/get', carouselController.getCarousel);
 
 router.patch(
   '/update/:id',
   upload.fields([
     { name: 'backgroundImage', maxCount: 1 },
-    { name: 'gifs', maxCount: 10 }
+    { name: 'gif', maxCount: 1 }
   ]),
   carouselController.updateCarousel
 );
