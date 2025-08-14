@@ -1,10 +1,9 @@
 const HomeCarousel = require('../../../Models/Admin/Carousel/homeGifModel');
 const fs = require('fs');
 
+// Create Carousel
 exports.createCarousel = async (req, res) => {
   try {
-    const { title, sections } = req.body;
-
     if (!req.files || !req.files.backgroundImage || !req.files.gifs) {
       return res.status(400).json({ message: 'Background image and GIFs are required' });
     }
@@ -12,18 +11,9 @@ exports.createCarousel = async (req, res) => {
     const backgroundImage = req.files.backgroundImage[0].path;
     const gifs = req.files.gifs.map(file => file.path);
 
-    let parsedSections = [];
-    try {
-      parsedSections = JSON.parse(sections);
-    } catch (err) {
-      return res.status(400).json({ message: 'Invalid sections format, must be JSON' });
-    }
-
     const newCarousel = new HomeCarousel({
-      title,
       backgroundImage,
-      gifs,
-      sections: parsedSections
+      gifs
     });
 
     await newCarousel.save();
@@ -33,38 +23,26 @@ exports.createCarousel = async (req, res) => {
   }
 };
 
+// Get All Carousels
 exports.getAllCarousels = async (req, res) => {
   try {
-    const carousels = await HomeCarousel.find().populate('sections.productIds');
+    const carousels = await HomeCarousel.find();
     res.json(carousels);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching carousels', error: error.message });
   }
 };
 
+// Update Carousel
 exports.updateCarousel = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, sections } = req.body;
 
     const carousel = await HomeCarousel.findById(id);
     if (!carousel) {
       return res.status(404).json({ message: 'Carousel not found' });
     }
 
-   
-    if (title) carousel.title = title;
-
-    
-    if (sections) {
-      try {
-        carousel.sections = JSON.parse(sections);
-      } catch (err) {
-        return res.status(400).json({ message: 'Invalid sections format, must be JSON' });
-      }
-    }
-
-    
     if (req.files && req.files.backgroundImage) {
       if (carousel.backgroundImage && fs.existsSync(carousel.backgroundImage)) {
         fs.unlinkSync(carousel.backgroundImage);
@@ -72,9 +50,7 @@ exports.updateCarousel = async (req, res) => {
       carousel.backgroundImage = req.files.backgroundImage[0].path;
     }
 
-    
     if (req.files && req.files.gifs) {
-      
       carousel.gifs.forEach(gifPath => {
         if (fs.existsSync(gifPath)) {
           fs.unlinkSync(gifPath);
@@ -90,6 +66,7 @@ exports.updateCarousel = async (req, res) => {
   }
 };
 
+// Delete Carousel
 exports.deleteCarousel = async (req, res) => {
   try {
     const { id } = req.params;
@@ -98,6 +75,7 @@ exports.deleteCarousel = async (req, res) => {
     if (!carousel) {
       return res.status(404).json({ message: 'Carousel not found' });
     }
+
     if (carousel.backgroundImage && fs.existsSync(carousel.backgroundImage)) {
       fs.unlinkSync(carousel.backgroundImage);
     }

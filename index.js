@@ -18,6 +18,7 @@ const adminTimeSaleRoutes = require('./Routes/Admin/TimeSale/timeSaleRoutes');
 const adminHomeGifRoutes = require('./Routes/Admin/Carousel/homeGifRoutes');
 const adminUserManagementRoutes = require('./Routes/Admin/UserManagement/userManagementRoutes');
 const adminCoinSettingsRoutes = require('./Routes/Admin/CoinSetting/CoinSettingRoute');
+const adminComboOfferRoutes= require('./Routes/Admin/ComboOffer/comboOfferRoutes')
 
 
 const userAuthRoutes = require('./Routes/User/Auth/authRoutes');
@@ -29,6 +30,7 @@ const userWishlistRoutes = require('./Routes/User/Wishlist/wishlistRoutes');
 const userProfileRoutes = require('./Routes/User/Profile/profileRoute');
 const userCartRoutes= require('./Routes/User/Cart/cartRoutes')
 const userCategoryRoutes = require('./Routes/User/Category/categoryRoutes')
+const userCheckoutRoutes = require('./Routes/User/Checkout/checkoutRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -41,6 +43,7 @@ app.use('/api/admin/time-sale', adminTimeSaleRoutes);
 app.use('/api/admin/home-gif', adminHomeGifRoutes);
 app.use('/api/admin/user-management', adminUserManagementRoutes);
 app.use('/api/admin/coin-setting', adminCoinSettingsRoutes);
+app.use('/api/admin/combo-offer',adminComboOfferRoutes)
 
 
 app.use('/api/user/auth', userAuthRoutes);
@@ -52,6 +55,7 @@ app.use('/api/user/wishlist', userWishlistRoutes);
 app.use('/api/user/profile', userProfileRoutes);
 app.use('/api/user/cart', userCartRoutes)
 app.use('/api/user/category',userCategoryRoutes)
+app.use('/api/user/checkout',userCheckoutRoutes)
 
 require('./DB/connection');
 

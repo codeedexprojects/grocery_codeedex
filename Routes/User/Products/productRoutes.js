@@ -8,7 +8,6 @@ const {
 } = require('../../../Controller/User/Products/productController');
 const optionalAuth = require('../../../Middlewares/optionalAuth'); // Add this line
 
-// Apply optionalAuth middleware to all product routes
 router.get('/get', optionalAuth, getAllProducts);
 router.get('/get/:id', optionalAuth, getProductById);
 router.get('/get/main/:mainCategoryId', optionalAuth, getProductsByMainCategory);

@@ -13,7 +13,6 @@ const createCategory = async (req, res) => {
     if (existing) {
       return res.status(400).json({ message: 'Category already exists' });
     }
-
     const category = new MainCategory({ name, icon, status, primaryColor, secondaryColor });
     await category.save();
 
