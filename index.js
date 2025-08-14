@@ -19,6 +19,10 @@ const adminHomeGifRoutes = require('./Routes/Admin/Carousel/homeGifRoutes');
 const adminUserManagementRoutes = require('./Routes/Admin/UserManagement/userManagementRoutes');
 const adminCoinSettingsRoutes = require('./Routes/Admin/CoinSetting/CoinSettingRoute');
 const adminComboOfferRoutes= require('./Routes/Admin/ComboOffer/comboOfferRoutes')
+const adminSubAdminManagement = require('./Routes/Admin/SubAdminManagement/subAdminManagementRoute');
+const adminCouponRoutes = require('./Routes/Admin/Coupon/couponRoutes')
+const adminActivityLogRoutes = require('./Routes/Admin/ActivityLog/activityLogRoute')
+const adminNotificationRoutes = require('./Routes/Admin/Notification/notificationRoutes')
 
 
 const userAuthRoutes = require('./Routes/User/Auth/authRoutes');
@@ -31,6 +35,8 @@ const userProfileRoutes = require('./Routes/User/Profile/profileRoute');
 const userCartRoutes= require('./Routes/User/Cart/cartRoutes')
 const userCategoryRoutes = require('./Routes/User/Category/categoryRoutes')
 const userCheckoutRoutes = require('./Routes/User/Checkout/checkoutRoutes')
+const userAddressRoutes = require('./Routes/User/Address/addressRoutes')
+
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -44,6 +50,12 @@ app.use('/api/admin/home-gif', adminHomeGifRoutes);
 app.use('/api/admin/user-management', adminUserManagementRoutes);
 app.use('/api/admin/coin-setting', adminCoinSettingsRoutes);
 app.use('/api/admin/combo-offer',adminComboOfferRoutes)
+app.use('/api/admin/sub-admin-management', adminSubAdminManagement)
+app.use('/api/admin/coupon', adminCouponRoutes)
+app.use('/api/admin/activity-log', adminActivityLogRoutes)
+app.use('/api/admin/notification', adminNotificationRoutes)
+
+
 
 
 app.use('/api/user/auth', userAuthRoutes);
@@ -56,6 +68,8 @@ app.use('/api/user/profile', userProfileRoutes);
 app.use('/api/user/cart', userCartRoutes)
 app.use('/api/user/category',userCategoryRoutes)
 app.use('/api/user/checkout',userCheckoutRoutes)
+app.use('/api/user/address',userAddressRoutes)
+
 
 require('./DB/connection');
 
