@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../Models/User/Auth/authModel');
+const Admin = require('../Models/Admin/Auth/authModel')
 
-const verifyUserToken = (allowedRoles = ["user"]) => {
+const verifyToken = (allowedRoles = ["user", "admin", "subadmin"]) => {
   return async (req, res, next) => {
     const authHeader = req.headers['authorization'];
 
@@ -16,20 +17,30 @@ const verifyUserToken = (allowedRoles = ["user"]) => {
 
     try {
       const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Verify user exists in database
-      const user = await User.findById(decodedToken._id);
-      if (!user) {
-        return res.status(401).json({ message: "User not found." });
-      }
-
-      // Check role if restrictions are applied
+              
+      // Role restriction check
       if (allowedRoles.length && !allowedRoles.includes(decodedToken.role)) {
         return res.status(401).json({ message: "Unauthorized. Access denied." });
       }
+      
+      let account;
+      if (decodedToken.role === "user") {
+        account = await User.findById(decodedToken.id);
+        if (!account) {
+          return res.status(401).json({ message: "User not found." });          
+        }
+        req.user = account;
+      } else if (["admin", "subadmin"].includes(decodedToken.role)) {
+        
+        account = await Admin.findById(decodedToken.id);
+        if (!account) {            
+          return res.status(401).json({ message: "Admin not found." });
+        }
+        req.admin = account;
+      } else {
+        return res.status(401).json({ message: "Role not recognized." });
+      }
 
-      // Attach full user document to request
-      req.user = user;
       next();
     } catch (err) {
       return res.status(401).json({ message: "Invalid or expired token." });
@@ -37,4 +48,5 @@ const verifyUserToken = (allowedRoles = ["user"]) => {
   };
 };
 
-module.exports = verifyUserToken;
+
+module.exports = verifyToken;

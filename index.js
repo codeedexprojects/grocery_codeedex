@@ -18,6 +18,8 @@ const adminTimeSaleRoutes = require('./Routes/Admin/TimeSale/timeSaleRoutes');
 const adminHomeGifRoutes = require('./Routes/Admin/Carousel/homeGifRoutes');
 const adminUserManagementRoutes = require('./Routes/Admin/UserManagement/userManagementRoutes');
 const adminCoinSettingsRoutes = require('./Routes/Admin/CoinSetting/CoinSettingRoute');
+const adminSubAdminManagement = require('./Routes/Admin/SubAdminManagement/subAdminManagementRoute');
+
 
 
 const userAuthRoutes = require('./Routes/User/Auth/authRoutes');
@@ -41,6 +43,7 @@ app.use('/api/admin/time-sale', adminTimeSaleRoutes);
 app.use('/api/admin/home-gif', adminHomeGifRoutes);
 app.use('/api/admin/user-management', adminUserManagementRoutes);
 app.use('/api/admin/coin-setting', adminCoinSettingsRoutes);
+app.use('/api/admin/sub-admin-management', adminSubAdminManagement)
 
 
 app.use('/api/user/auth', userAuthRoutes);
