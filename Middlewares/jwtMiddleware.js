@@ -25,7 +25,7 @@ const verifyToken = (allowedRoles = ["user", "admin", "subadmin"]) => {
       
       let account;
       if (decodedToken.role === "user") {
-        account = await User.findById(decodedToken.id);
+        account = await User.findById(decodedToken._id);
         if (!account) {
           return res.status(401).json({ message: "User not found." });          
         }
