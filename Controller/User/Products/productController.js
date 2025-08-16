@@ -37,13 +37,8 @@ const getWishlistProductIds = async (userId) => {
 
 const getAllProducts = async (req, res) => {
   try {
-<<<<<<< HEAD
-    const userId = req.user?._id; 
-    
-    let products = await Product.find()
-=======
     const userId = req.user?._id;
-
+    
     const {
       q,
       mainCategory,
@@ -74,31 +69,10 @@ const getAllProducts = async (req, res) => {
     if (isSeasonal !== undefined) filter.isSeasonal = isSeasonal === 'true';
 
     let products = await Product.find(filter)
->>>>>>> b04c174d56e3d1dabef38e9c52286fd8f00d47a5
       .populate('mainCategory', 'name')
       .populate('category', 'name')
       .populate('subCategory', 'name');
 
-<<<<<<< HEAD
-    const wishlistProductIds = await getWishlistProductIds(userId);
-    const cartItemsMap = await getCartItemsMap(userId);
-    
-    products = products.map(product => {
-      const productObj = product.toObject();
-      const productId = product._id.toString();
-      
-      return {
-        ...productObj,
-        isWishlist: wishlistProductIds.includes(productId),
-        cartItems: cartItemsMap.get(productId) || []
-      };
-    });
-    
-    res.json(products);
-  } catch (err) {
-    console.error('Error in getAllProducts:', err);
-    res.status(500).json({ message: 'Server error' });
-=======
     // Apply price filtering
     products = products.filter(product => {
       const finalPrice = product.offerPrice || product.price;
@@ -118,23 +92,22 @@ const getAllProducts = async (req, res) => {
       }
     }
 
-    // Wishlist integration
-    if (userId) {
-      const wishlist = await Wishlist.findOne({ user: userId });
-      const wishlistProductIds = wishlist?.products.map(item => item.product.toString()) || [];
+    // Get user-specific data
+    const wishlistProductIds = await getWishlistProductIds(userId);
+    const cartItemsMap = await getCartItemsMap(userId);
 
-      products = products.map(product => ({
-        ...product.toObject(),
+    // Prepare response
+    products = products.map(product => {
+      const productObj = product.toObject();
+      const productId = product._id.toString();
+      
+      return {
+        ...productObj,
         finalPrice: product.offerPrice || product.price,
-        isWishlist: wishlistProductIds.includes(product._id.toString())
-      }));
-    } else {
-      products = products.map(product => ({
-        ...product.toObject(),
-        finalPrice: product.offerPrice || product.price,
-        isWishlist: false
-      }));
-    }
+        isWishlist: wishlistProductIds.includes(productId),
+        cartItems: cartItemsMap.get(productId) || []
+      };
+    });
 
     res.status(200).json({
       total: products.length,
@@ -142,11 +115,10 @@ const getAllProducts = async (req, res) => {
     });
 
   } catch (err) {
+    console.error('Error in getAllProducts:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
->>>>>>> b04c174d56e3d1dabef38e9c52286fd8f00d47a5
   }
 };
-
 
 
 const getProductById = async (req, res) => {
