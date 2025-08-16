@@ -22,13 +22,17 @@ exports.updateProfile = async (req, res) => {
   try {
     const { name, email, number } = req.body;
 
-    const deletedConflict = await DeletedUser.findOne({
+    // Check if email or number already exists in User (excluding current user)
+    const conflict = await User.findOne({
+      _id: { $ne: req.user.id },
       $or: [{ email }, { number }]
     });
-    if (deletedConflict) {
-      return res.status(400).json({ message: 'This email/number is not allowed to be reused' });
+
+    if (conflict) {
+      return res.status(400).json({ message: 'Email or number already exists' });
     }
 
+    // Update user
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
       { name, email, number },
@@ -44,6 +48,7 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 // APPLY REFERRAL CODE (One-Time)
 exports.applyReferralCode = async (req, res) => {
