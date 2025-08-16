@@ -102,10 +102,84 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+
+const searchAndFilterProducts = async (req, res) => {
+  try {
+    const { search, stockFilter = 'all', priceFilter = 'all' } = req.query;
+
+    const match = {};
+
+    // ✅ Search filter
+    if (search) {
+      match.name = { $regex: search, $options: 'i' };
+    }
+
+    // ✅ Stock filter
+    if (stockFilter && stockFilter !== 'all') {
+      if (stockFilter === 'low') {
+        match['weightsAndStocks.quantity'] = { $lte: 10 };
+      } else if (stockFilter === 'medium') {
+        match['weightsAndStocks.quantity'] = { $gt: 10, $lte: 25 };
+      } else if (stockFilter === 'high') {
+        match['weightsAndStocks.quantity'] = { $gt: 25 };
+      }
+    }
+
+    // ✅ Aggregation for offerPrice vs price
+    const pipeline = [
+      { $match: match },
+      {
+        $addFields: {
+          effectivePrice: {
+            $cond: [
+              { $ifNull: ["$offerPrice", false] },
+              "$offerPrice",
+              "$price"
+            ]
+          }
+        }
+      }
+    ];
+
+    // ✅ Price filter on effectivePrice
+    if (priceFilter && priceFilter !== 'all') {
+      let priceMatch = {};
+      if (priceFilter === 'under50') {
+        priceMatch = { effectivePrice: { $lt: 50 } };
+      } else if (priceFilter === '50-100') {
+        priceMatch = { effectivePrice: { $gte: 50, $lte: 100 } };
+      } else if (priceFilter === '100-200') {
+        priceMatch = { effectivePrice: { $gte: 100, $lte: 200 } };
+      } else if (priceFilter === 'over200') {
+        priceMatch = { effectivePrice: { $gt: 200 } };
+      }
+      pipeline.push({ $match: priceMatch });
+    }
+
+    // Run aggregation
+    let products = await Product.aggregate(pipeline);
+
+    // Populate category names (after aggregation)
+    products = await Product.populate(products, [
+      { path: "mainCategory", select: "name" },
+      { path: "category", select: "name" },
+      { path: "subCategory", select: "name" }
+    ]);
+
+    res.json(products);
+  } catch (err) {
+    console.error('Error in searchAndFilterProducts:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+
 module.exports = {
   createProduct,
   getAllProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  searchAndFilterProducts
 };
