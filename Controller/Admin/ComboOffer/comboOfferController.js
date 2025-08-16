@@ -81,3 +81,36 @@ exports.deleteComboOffer = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+// Search Combo Offers
+exports.searchComboOffers = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ success: false, message: "Search query is required" });
+    }
+
+    const combos = await ComboOffer.find({
+      name: { $regex: q, $options: "i" } 
+    })
+      .populate({
+        path: "products.productId",
+        select: "name price weightsAndStocks",
+        match: { name: { $regex: q, $options: "i" } } 
+      })
+      .sort({ createdAt: -1 });
+
+    const filtered = combos.filter(
+      combo =>
+        combo.name?.match(new RegExp(q, "i")) ||
+        combo.products.some(p => p.productId) 
+    );
+
+    res.status(200).json({ success: true, results: filtered });
+  } catch (error) {
+    console.error("Search Combo Offer Error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

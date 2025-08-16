@@ -7,5 +7,6 @@ router.get('/get',  comboOfferController.getAllComboOffers);
 router.get('/get/:id', comboOfferController.getComboOfferById);
 router.patch('/update/:id', comboOfferController.updateComboOffer);
 router.delete('/delete/:id', comboOfferController.deleteComboOffer);
+router.get('/search', comboOfferController.searchComboOffers)
 
 module.exports = router;
