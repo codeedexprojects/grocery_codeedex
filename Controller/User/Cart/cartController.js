@@ -7,17 +7,14 @@ exports.addToCart = async (req, res) => {
   try {
     const { productId, comboOfferId, weight, measurm, quantity } = req.body;
     const userId = req.user._id;
-
     if (!productId && !comboOfferId) {
       return res.status(400).json({ message: 'Either productId or comboOfferId is required' });
     }
-
     let cart = await Cart.findOne({ user: userId });
-    
     if (comboOfferId) {
       const comboOffer = await ComboOffer.findById(comboOfferId).populate('products.productId');
       if (!comboOffer) return res.status(404).json({ message: 'Combo offer not found' });
-      
+    
       let comboPrice = 0;
       if (comboOffer.discountType === 'percentage') {
         const totalOriginalPrice = comboOffer.products.reduce((sum, item) => {
@@ -147,17 +144,19 @@ exports.getCart = async (req, res) => {
       .populate('items.product')
       .populate('items.comboOffer');
     
-    if (!cart) return res.status(404).json({ message: 'Cart is empty' });
-    
-    // Calculate total discount for combo offers
+  if (!cart) {
+      return res.status(200).json({
+        user: userId,
+        items: [],
+        totalPrice: 0,
+        totalDiscount: 0
+      });
+    }
     let totalDiscount = 0;
-    
     const updatedItems = await Promise.all(cart.items.map(async (item) => {
       if (item.isCombo && item.comboOffer) {
-        // Calculate original price of combo products
         const comboOffer = item.comboOffer;
         await comboOffer.populate('products.productId');
-        
         const originalPrice = comboOffer.products.reduce((sum, productItem) => {
           const product = productItem.productId;
           let price = product.price;
@@ -198,7 +197,14 @@ exports.getCart = async (req, res) => {
   try {
     const userId = req.user._id;
     const cart = await Cart.findOne({ user: userId }).populate('items.product');
-    if (!cart) return res.status(404).json({ message: 'Cart is empty' });
+    if (!cart) {
+      return res.status(200).json({
+        user: userId,
+        items: [],
+        totalPrice: 0,
+        totalDiscount: 0
+      });
+    }
     res.status(200).json(cart);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });

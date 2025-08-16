@@ -36,6 +36,7 @@ const userCartRoutes= require('./Routes/User/Cart/cartRoutes')
 const userCategoryRoutes = require('./Routes/User/Category/categoryRoutes')
 const userCheckoutRoutes = require('./Routes/User/Checkout/checkoutRoutes')
 const userAddressRoutes = require('./Routes/User/Address/addressRoutes')
+const userOrderRoutes = require('./Routes/User/Order/orderRoutes')
 
 
 
@@ -57,7 +58,6 @@ app.use('/api/admin/notification', adminNotificationRoutes)
 
 
 
-
 app.use('/api/user/auth', userAuthRoutes);
 app.use('/api/user/product', userProductRoutes);
 app.use('/api/user/main-category', userMainCategoryRoutes);
@@ -69,6 +69,7 @@ app.use('/api/user/cart', userCartRoutes)
 app.use('/api/user/category',userCategoryRoutes)
 app.use('/api/user/checkout',userCheckoutRoutes)
 app.use('/api/user/address',userAddressRoutes)
+app.use('/api/user/order',userOrderRoutes)
 
 
 require('./DB/connection');
