@@ -91,3 +91,28 @@ exports.deleteSubadmin = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+exports.searchSubadmins = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    // Search only subadmins
+    const subadmins = await Admin.find({
+      role: "subadmin",
+      $or: [
+        { name: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } }
+      ]
+    }).select("-password");
+
+    res.status(200).json({ results: subadmins });
+  } catch (err) {
+    console.error("Error searching subadmins:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
