@@ -2,6 +2,7 @@ const User = require('../../../Models/User/Auth/authModel');
 const DeletedUser = require('../../../Models/User/DeletedUser/deletedUserModel'); 
 const mongoose = require('mongoose');
 const CoinSettings = require('../../../Models/Admin/CoinSetting/coinSettingModel')
+const WalletTransaction = require('../../../Models/User/Wallet/walletModel')
 
 // GET PROFILE
 exports.getProfile = async (req, res) => {
@@ -22,13 +23,17 @@ exports.updateProfile = async (req, res) => {
   try {
     const { name, email, number } = req.body;
 
-    const deletedConflict = await DeletedUser.findOne({
+    // Check if email or number already exists in User (excluding current user)
+    const conflict = await User.findOne({
+      _id: { $ne: req.user.id },
       $or: [{ email }, { number }]
     });
-    if (deletedConflict) {
-      return res.status(400).json({ message: 'This email/number is not allowed to be reused' });
+
+    if (conflict) {
+      return res.status(400).json({ message: 'Email or number already exists' });
     }
 
+    // Update user
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
       { name, email, number },
@@ -45,60 +50,73 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+
 // APPLY REFERRAL CODE (One-Time)
 exports.applyReferralCode = async (req, res) => {
   try {
     const { referralCode } = req.body;
     if (!referralCode) {
-      return res.status(400).json({ message: 'Referral code is required' });
+      return res.status(400).json({ message: "Referral code is required" });
     }
 
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if this user is reclaiming an old account
+    // Check if reclaimed account
     const reclaimCheck = await DeletedUser.findOne({
       $or: [{ email: user.email }, { number: user.number }]
     });
-
     if (reclaimCheck) {
       return res.status(400).json({
-        message: 'Referral benefits are not available for reclaimed accounts'
+        message: "Referral benefits are not available for reclaimed accounts"
       });
     }
 
     // Prevent multiple use
     if (user.referredBy) {
-      return res.status(400).json({ message: 'Referral code already applied' });
+      return res.status(400).json({ message: "Referral code already applied" });
     }
 
     // Find referrer
     const referrer = await User.findOne({ referralCode });
     if (!referrer) {
-      return res.status(400).json({ message: 'Invalid referral code' });
+      return res.status(400).json({ message: "Invalid referral code" });
     }
 
     // Prevent self-referral
     if (referrer._id.toString() === user._id.toString()) {
-      return res.status(400).json({ message: 'You cannot refer yourself' });
+      return res.status(400).json({ message: "You cannot refer yourself" });
     }
 
     // Apply referral
     user.referredBy = referrer._id;
     await user.save();
 
+    // Get referral bonus
     const coinSettings = await CoinSettings.findOne();
     const referralBonus = coinSettings?.referralBonus || 0;
 
-    referrer.coins = (referrer.coins || 0) + referralBonus; 
-    await referrer.save();
+    if (referralBonus > 0) {
+      // Update referrer coins
+      referrer.coins += referralBonus;
+      await referrer.save();
 
-    res.status(200).json({ message: 'Referral applied successfully' });
+      // Log wallet transaction for referrer
+      await WalletTransaction.create({
+        userId: referrer._id,
+        type: "credit",
+        amount: referralBonus,
+        reason: "Referral Bonus",
+        balanceAfter: referrer.coins
+      });
+    }
+
+    res.status(200).json({ message: "Referral applied successfully" });
   } catch (err) {
-    console.error('Error applying referral code:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error applying referral code:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 

@@ -6,7 +6,8 @@ const {
   getAllProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  searchAndFilterProducts
 } = require('../../../Controller/Admin/Products/productController');
 const { upload } = require('../../../Middlewares/multerMiddleware'); 
 
@@ -16,5 +17,8 @@ router.get('/get', getAllProducts);
 router.get('/get/:id', getProductById);
 router.patch('/update/:id', upload.array('images', 5), updateProduct);
 router.delete('/delete/:id', deleteProduct);
+router.get('/filter', searchAndFilterProducts);
+
+
 
 module.exports = router;

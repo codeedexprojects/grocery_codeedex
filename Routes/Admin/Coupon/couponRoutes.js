@@ -10,5 +10,6 @@ router.post("/", verifyAdmin(['admin','subadmin']), checkPermission("create_coup
 router.get("/", couponController.getAllCoupons);
 router.patch("/:id", verifyAdmin(['admin', 'subadmin']), checkPermission("update_coupon"), adminLogger('Coupon', 'update'), couponController.updateCoupon);
 router.delete("/:id", couponController.deleteCoupon);
+router.get('/search', couponController.searchCoupons)
 
 module.exports = router;

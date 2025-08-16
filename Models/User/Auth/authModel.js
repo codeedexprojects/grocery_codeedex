@@ -13,6 +13,13 @@ const userSchema = new mongoose.Schema({
   referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   coins: { type: Number, default: 0 },
   role: { type: String, default: 'user' },
+
+  status: { 
+    type: String, 
+    enum: ['active', 'inactive', 'blocked'], 
+    default: 'active' 
+  },
+
   devices: [
     {
       deviceName: String,     // e.g., "Chrome on Windows"
@@ -25,7 +32,6 @@ const userSchema = new mongoose.Schema({
 // Generate referral code before saving
 userSchema.pre('save', function (next) {
   if (!this.referralCode) {
-    // Example: 8-char unique code from name + random string
     const randomString = crypto.randomBytes(3).toString('hex').toUpperCase();
     this.referralCode = `${this.name?.split(' ')[0] || 'USER'}-${randomString}`;
   }

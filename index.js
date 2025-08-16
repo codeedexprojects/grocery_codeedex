@@ -37,6 +37,8 @@ const userCategoryRoutes = require('./Routes/User/Category/categoryRoutes')
 const userCheckoutRoutes = require('./Routes/User/Checkout/checkoutRoutes')
 const userAddressRoutes = require('./Routes/User/Address/addressRoutes')
 const userOrderRoutes = require('./Routes/User/Order/orderRoutes')
+const userWalletRoutes = require('./Routes/User/Wallet/walletRoutes')
+
 
 
 
@@ -70,6 +72,7 @@ app.use('/api/user/category',userCategoryRoutes)
 app.use('/api/user/checkout',userCheckoutRoutes)
 app.use('/api/user/address',userAddressRoutes)
 app.use('/api/user/order',userOrderRoutes)
+app.use('/api/user/wallet',userWalletRoutes)
 
 
 require('./DB/connection');
