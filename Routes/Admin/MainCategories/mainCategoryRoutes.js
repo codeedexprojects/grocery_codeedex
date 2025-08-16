@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {createCategory,getCategories,getCategoryById,updateCategory,deleteCategory
+const {createCategory,getCategories,getCategoryById,updateCategory,deleteCategory, searchMainCategories
 } = require('../../../Controller/Admin/MainCategories/mainCategoryController');
 const { upload } = require('../../../Middlewares/multerMiddleware'); 
 
@@ -13,5 +13,8 @@ router.get('/get/:id', getCategoryById);
 router.patch('/update/:id', upload.single('image'), updateCategory);
 
 router.delete('/delete/:id', deleteCategory);
+
+router.get('/search', searchMainCategories);
+
 
 module.exports = router;
