@@ -35,4 +35,10 @@ router.delete(
   subadminController.deleteSubadmin
 );
 
+router.get(
+  '/search',
+  // verifyAdmin,
+  subadminController.searchSubadmins
+);
+
 module.exports = router;

@@ -60,3 +60,35 @@ exports.deleteTimeSale = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+
+// Search Time Sale Products
+exports.searchTimeSales = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ success: false, message: "Search query is required" });
+    }
+
+    const timeSales = await TimeSale.find({
+      $or: [
+        { title: { $regex: q, $options: "i" } } 
+      ]
+    })
+      .populate({
+        path: "productId",
+        select: "title price",
+        match: { title: { $regex: q, $options: "i" } } 
+      })
+      .sort({ createdAt: -1 });
+
+    // remove items where both title & productId didn't match
+    const filtered = timeSales.filter(item => item.productId || item.title.match(new RegExp(q, "i")));
+
+    res.status(200).json({ success: true, results: filtered });
+  } catch (error) {
+    console.error("Search Time Sale Error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

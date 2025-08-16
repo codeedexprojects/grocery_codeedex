@@ -71,10 +71,33 @@ const deleteCategory = async (req, res) => {
   }
 };
 
+// Search categories
+const searchCategories = async (req, res) => {
+  try {
+    const { search } = req.query;
+
+    const filter = {};
+
+    // ✅ Search by name (case insensitive)
+    if (search) {
+      filter.name = { $regex: search, $options: "i" };
+    }
+
+
+    const categories = await Category.find(filter).sort({ createdAt: -1 });
+
+    res.json(categories);
+  } catch (err) {
+    console.error("Error searching categories:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createCategory,
   getCategories,
   getCategoryById,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  searchCategories
 };

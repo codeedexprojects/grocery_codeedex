@@ -9,5 +9,7 @@ router.get('/get/category/:categoryId', subcategoryController.getSubcategoriesBy
 router.get('/get/:id', subcategoryController.getSubcategoryById);
 router.patch('/update/:id', upload.single('image'), subcategoryController.updateSubcategory);
 router.delete('/delete/:id', subcategoryController.deleteSubcategory);
+router.get('/search', subcategoryController.searchSubCategories);
+
 
 module.exports = router;

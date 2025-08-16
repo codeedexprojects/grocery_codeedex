@@ -57,3 +57,29 @@ exports.deleteCoupon = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
+// Search Coupons
+exports.searchCoupons = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const coupons = await Coupon.find({
+      $or: [
+        { code: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } }
+      ]
+    })
+      .populate("applicableCategories", "name")
+      .populate("applicableProducts", "name")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ results: coupons });
+  } catch (error) {
+    console.error("Error searching coupons:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
