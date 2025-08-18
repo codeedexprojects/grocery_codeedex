@@ -93,11 +93,31 @@ const searchCategories = async (req, res) => {
   }
 };
 
+const getCategoriesByMainCategory = async (req, res) => {
+  try {
+    const { mainCategoryId } = req.params;
+
+    const categories = await Category.find({ mainCategory: mainCategoryId })
+      .populate("mainCategory", "name")
+      .sort({ createdAt: -1 });
+
+    if (!categories.length) {
+      return res.status(404).json({ message: "No categories found for this Main Category" });
+    }
+
+    res.json(categories);
+  } catch (err) {
+    console.error("Error fetching categories by main category:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createCategory,
   getCategories,
   getCategoryById,
   updateCategory,
   deleteCategory,
-  searchCategories
+  searchCategories,
+  getCategoriesByMainCategory
 };

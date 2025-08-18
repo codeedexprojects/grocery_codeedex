@@ -112,6 +112,8 @@ const searchSubCategories = async (req, res) => {
   }
 };
 
+
+
 module.exports = {
   createSubcategory,
   getSubcategories,

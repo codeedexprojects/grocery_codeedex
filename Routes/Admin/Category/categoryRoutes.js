@@ -6,7 +6,8 @@ const {
   getCategoryById,
   updateCategory,
   deleteCategory,
-  searchCategories
+  searchCategories,
+  getCategoriesByMainCategory
 } = require('../../../Controller/Admin/Category/categoryController');
 const { upload } = require('../../../Middlewares/multerMiddleware');
 
@@ -16,6 +17,7 @@ router.get('/get/:id', getCategoryById);
 router.patch('/update/:id', upload.single('image'), updateCategory);
 router.delete('/delete/:id', deleteCategory);
 router.get('/search', searchCategories);
+router.get("/main/:mainCategoryId", getCategoriesByMainCategory);
 
 
 module.exports = router;
