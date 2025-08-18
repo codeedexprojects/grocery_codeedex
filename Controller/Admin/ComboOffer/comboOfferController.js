@@ -1,11 +1,38 @@
 const ComboOffer = require('../../../Models/Admin/ComboOffer/comboOfferModel');
+const ComboCategory = require('../../../Models/Admin/ComboOffer/comboCategoryModel')
 
 // Create Combo Offer
 exports.createComboOffer = async (req, res) => {
   try {
-    const combo = new ComboOffer(req.body);
+    const { category, ...offerData } = req.body;
+    
+    // Verify category exists
+    const categoryExists = await ComboCategory.findById(category);
+    if (!categoryExists) {
+      return res.status(400).json({ message: 'Invalid combo category' });
+    }
+
+    // Handle image upload
+    if (req.file) {
+      offerData.image = req.file.path; 
+    }
+
+    const combo = new ComboOffer({
+      ...offerData,
+      category
+    });
+    
     await combo.save();
-    res.status(201).json({ message: 'Combo offer created successfully', combo });
+    
+    // Populate category in response
+    const populatedCombo = await ComboOffer.findById(combo._id)
+      .populate('category', 'title')
+      .populate('products.productId', 'name price weightsAndStocks');
+
+    res.status(201).json({ 
+      message: 'Combo offer created successfully', 
+      combo: populatedCombo 
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -15,39 +42,48 @@ exports.createComboOffer = async (req, res) => {
 exports.getAllComboOffers = async (req, res) => {
   try {
     const combos = await ComboOffer.find()
-      .populate('products.productId', 'name price weightsAndStocks');
+      .populate('category', 'title status')
+      .populate('products.productId', 'name price weightsAndStocks images');
 
-    
-    const combosWithWeightPrice = combos.map(combo => {
-      const updatedProducts = combo.products.map(p => {
+    const enhancedCombos = combos.map(combo => {
+      const productsWithDetails = combo.products.map(p => {
+        const product = p.productId;
         let weightPrice = null;
+        let productImage = null;
 
-        if (p.productId && p.productId.weightsAndStocks) {
-          const match = p.productId.weightsAndStocks.find(
+        // Get weight-specific price if available
+        if (product && product.weightsAndStocks) {
+          const match = product.weightsAndStocks.find(
             ws => ws.weight === p.weight && ws.measurm === p.measurm
           );
-          if (match) {
-            weightPrice = match.weight_price;
-          }
+          if (match) weightPrice = match.weight_price;
+        }
+
+        // Get first product image if available
+        if (product && product.images && product.images.length > 0) {
+          productImage = product.images[0];
         }
 
         return {
           ...p.toObject(),
-          weight_price: weightPrice 
+          weightPrice,
+          productImage,
+          productName: product?.name || 'N/A'
         };
       });
 
       return {
         ...combo.toObject(),
-        products: updatedProducts
+        products: productsWithDetails
       };
     });
 
-    res.status(200).json(combosWithWeightPrice);
+    res.status(200).json(enhancedCombos);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // Get Single Combo Offer
 exports.getComboOfferById = async (req, res) => {

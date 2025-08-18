@@ -9,6 +9,12 @@ const comboProductSchema = new mongoose.Schema({
 
 const comboOfferSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  category: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'ComboCategory',
+    required: true
+  },
+  image: String,
   products: [comboProductSchema],
   discountType: { type: String, enum: ['fixed', 'percentage'], default: 'fixed' },
   discountValue: { type: Number, required: true },

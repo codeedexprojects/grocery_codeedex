@@ -23,6 +23,7 @@ const adminSubAdminManagement = require('./Routes/Admin/SubAdminManagement/subAd
 const adminCouponRoutes = require('./Routes/Admin/Coupon/couponRoutes')
 const adminActivityLogRoutes = require('./Routes/Admin/ActivityLog/activityLogRoute')
 const adminNotificationRoutes = require('./Routes/Admin/Notification/notificationRoutes')
+const adminComboCategoryRoutes = require('./Routes/Admin/ComboOffer/comboCategoryRoutes')
 
 
 const userAuthRoutes = require('./Routes/User/Auth/authRoutes');
@@ -57,6 +58,7 @@ app.use('/api/admin/sub-admin-management', adminSubAdminManagement)
 app.use('/api/admin/coupon', adminCouponRoutes)
 app.use('/api/admin/activity-log', adminActivityLogRoutes)
 app.use('/api/admin/notification', adminNotificationRoutes)
+app.use('/api/admin/combo-category',adminComboCategoryRoutes)
 
 
 
