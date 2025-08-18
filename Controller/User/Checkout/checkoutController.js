@@ -27,7 +27,7 @@ exports.createCheckout = async (req, res) => {
     await checkout.save();
 
     res.status(201).json({ 
-      message: 'New checkout created successfully', 
+      message: 'Checkout created', 
       checkout 
     });
   } catch (err) {

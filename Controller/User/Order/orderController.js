@@ -1,15 +1,13 @@
 const Order = require('../../../Models/User/Order/orderModel');
-const Cart = require('../../../Models/User/Cart/cartModel');
 const Checkout = require('../../../Models/User/Checkout/checkoutModel');
+const Cart = require('../../../Models/User/Cart/cartModel');
 
+// ✅ Create order from checkout
 exports.createOrder = async (req, res) => {
   try {
+    const { checkoutId, shippingAddress, paymentMethod } = req.body;
     const userId = req.user._id;
-    const { checkoutId, address, paymentMethod } = req.body;
-    if (!checkoutId) {
-      return res.status(400).json({ message: 'Checkout ID is required' });
-    }
-    const checkout = await Checkout.findOne({ _id: checkoutId })
+    const checkout = await Checkout.findOne({ _id: checkoutId, user: userId })
       .populate({
         path: 'cart',
         populate: [
@@ -21,67 +19,62 @@ exports.createOrder = async (req, res) => {
       return res.status(404).json({ message: 'Checkout not found' });
     }
     const cart = checkout.cart;
-    if (!cart || cart.items.length === 0) {
-      return res.status(400).json({ message: 'Cart is empty' });
-    }
-    const totalPrice = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // Create order
     const order = new Order({
       user: userId,
       items: cart.items,
-      totalPrice,
+      totalPrice: cart.totalPrice,
       totalDiscount: cart.totalDiscount,
-      paymentMethod: paymentMethod || 'COD',
-      address,
-      status: 'pending'
+      shippingAddress,
+      paymentMethod: paymentMethod || 'COD'
     });
+
     await order.save();
-    res.status(201).json({ message: 'Order placed successfully', order });
+
+    // Clear cart after order
+    await Cart.findByIdAndUpdate(cart._id, { items: [], totalPrice: 0, totalDiscount: 0 });
+
+    res.status(201).json({ message: 'Order created successfully', order });
   } catch (err) {
-    console.error("Error creating order:", err);
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-exports.getOrders = async (req, res) => {
+// ✅ Get user orders
+exports.getUserOrders = async (req, res) => {
   try {
     const userId = req.user._id;
-
-    const orders = await Order.find({ user: userId })
-      .populate('items.product')
-      .populate('items.comboOffer')
-      .sort({ createdAt: -1 });
-
+    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
     res.status(200).json(orders);
   } catch (err) {
-    console.error("Error fetching orders:", err);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+// ✅ Get single order
 exports.getOrderById = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const { id } = req.params;
-
-    const order = await Order.findOne({ _id: id, user: userId })
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId)
       .populate('items.product')
-      .populate('items.comboOffer');
-
+      .populate('items.comboOffer')
+      .populate('user', 'name email');
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
     res.status(200).json(order);
   } catch (err) {
-    console.error("Error fetching order:", err);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+// ✅ Update order status (admin use)
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { orderId } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findById(id);
+    const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
     order.status = status;
@@ -89,7 +82,6 @@ exports.updateOrderStatus = async (req, res) => {
 
     res.status(200).json({ message: 'Order status updated', order });
   } catch (err) {
-    console.error("Error updating order:", err);
     res.status(500).json({ message: 'Server error' });
   }
 };

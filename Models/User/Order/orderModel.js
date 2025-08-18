@@ -6,7 +6,7 @@ const orderItemSchema = new mongoose.Schema({
   weight: String,
   measurm: String,
   quantity: { type: Number, default: 1 },
-  price: { type: Number, required: true },
+  price: Number,
   isCombo: { type: Boolean, default: false }
 }, { _id: false });
 
@@ -20,17 +20,25 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
     default: 'pending'
   },
-  paymentMethod: { type: String, enum: ['COD', 'ONLINE'], default: 'COD' },
-  address: {
-    fullName: String,
+  paymentStatus: {
+    type: String,
+    enum: ['unpaid', 'paid', 'failed'],
+    default: 'unpaid'
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['COD', 'UPI', 'CARD', 'NETBANKING'],
+    default: 'COD'
+  },
+  shippingAddress: {
+    name: String,
     phone: String,
-    addressLine: String,
+    address: String,
     city: String,
     state: String,
-    pincode: String,
-    landmark: String
-  },
-  createdAt: { type: Date, default: Date.now }
+    postalCode: String,
+    country: String
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Order', orderSchema);

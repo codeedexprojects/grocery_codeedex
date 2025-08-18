@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, getOrders, getOrderById, updateOrderStatus } = require('../../../Controller/User/Order/orderController');
+const orderController = require('../../../Controller/User/Order/orderController');
 const jwtVerify = require('../../../Middlewares/jwtMiddleware')
 
-router.post('/create', jwtVerify(['user']), createOrder);
-router.get('/get', jwtVerify(['user']), getOrders);
-router.get('/get/:id', jwtVerify(['user']), getOrderById);
 
-router.put('/update/:id/status', jwtVerify(['user']), updateOrderStatus);
+router.post('/create', jwtVerify(['user']), orderController.createOrder);
+router.get('/my-orders', jwtVerify(['user']), orderController.getUserOrders);
+router.get('/:orderId', jwtVerify(['user']), orderController.getOrderById);
+
+router.put('/:orderId/status', jwtVerify(['user']),orderController.updateOrderStatus);
 
 module.exports = router;
