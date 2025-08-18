@@ -6,7 +6,7 @@ const jwtVerify = require('../../../Middlewares/jwtMiddleware')
 
 router.post('/create', jwtVerify(['user']), orderController.createOrder);
 router.get('/my-orders', jwtVerify(['user']), orderController.getUserOrders);
-router.get('/:orderId', jwtVerify(['user']), orderController.getOrderById);
+router.get('/get/:orderId', jwtVerify(['user']), orderController.getOrderById);
 
 router.put('/:orderId/status', jwtVerify(['user']),orderController.updateOrderStatus);
 
