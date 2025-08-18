@@ -38,6 +38,8 @@ const userCheckoutRoutes = require('./Routes/User/Checkout/checkoutRoutes')
 const userAddressRoutes = require('./Routes/User/Address/addressRoutes')
 const userOrderRoutes = require('./Routes/User/Order/orderRoutes')
 const userWalletRoutes = require('./Routes/User/Wallet/walletRoutes')
+const userNotificationRoutes = require('./Routes/User/Notification/notificationRoute')
+
 
 
 
@@ -73,6 +75,8 @@ app.use('/api/user/checkout',userCheckoutRoutes)
 app.use('/api/user/address',userAddressRoutes)
 app.use('/api/user/order',userOrderRoutes)
 app.use('/api/user/wallet',userWalletRoutes)
+app.use('/api/user/notificaion',userNotificationRoutes)
+
 
 
 require('./DB/connection');

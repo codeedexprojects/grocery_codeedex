@@ -1,17 +1,17 @@
-// Controllers/Admin/coinSettingsController.js
 const CoinSettings = require('../../../Models/Admin/CoinSetting/coinSettingModel');
 
 // 📌 Create or Update Coin Settings
 exports.updateCoinSettings = async (req, res) => {
   try {
-    const {  referralBonus, purchaseRate, redemptionRate } = req.body;
+    const { referralBonus, purchaseThreshold, coinsPerThreshold, redemptionRate } = req.body;
 
     let settings = await CoinSettings.findOne();
     if (!settings) {
-      settings = new CoinSettings({  referralBonus, purchaseRate, redemptionRate });
+      settings = new CoinSettings({ referralBonus, purchaseThreshold, coinsPerThreshold, redemptionRate });
     } else {
       settings.referralBonus = referralBonus ?? settings.referralBonus;
-      settings.purchaseRate = purchaseRate ?? settings.purchaseRate;
+      settings.purchaseThreshold = purchaseThreshold ?? settings.purchaseThreshold;
+      settings.coinsPerThreshold = coinsPerThreshold ?? settings.coinsPerThreshold;
       settings.redemptionRate = redemptionRate ?? settings.redemptionRate;
     }
 
