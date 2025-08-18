@@ -15,13 +15,21 @@ exports.createCheckout = async (req, res) => {
       return res.status(404).json({ message: 'Cart not found' });
     }
 
+    // 🔑 Remove existing checkout for this cart
+    await Checkout.deleteMany({ cart: cartId, user: userId });
+
+    // ✅ Create new checkout
     const checkout = new Checkout({
       user: userId,
       cart: cartId
     });
 
     await checkout.save();
-    res.status(201).json({ message: 'Checkout created', checkout });
+
+    res.status(201).json({ 
+      message: 'New checkout created successfully', 
+      checkout 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
