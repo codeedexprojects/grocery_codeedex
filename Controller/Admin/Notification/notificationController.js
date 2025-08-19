@@ -1,19 +1,21 @@
 const Notification = require('../../../Models/Admin/Notification/notificationModel');
 const fs = require('fs');
-const axios = require('axios');
 const UserModel = require('../../../Models/User/Auth/authModel');
 
-// Create Notification
+// ✅ Create Notification (Admin creates one)
 exports.createNotification = async (req, res) => {
-  const { title, description } = req.body;
+  const { title, description, notificationType } = req.body;
 
-  if (!req.file) return res.status(400).json({ message: "Notification Image is required" });
+  if (!title || !description) {
+    return res.status(400).json({ message: "Title and description are required" });
+  }
 
   try {
     const notification = await Notification.create({
       title,
       description,
-      image: req.file.filename,
+      notificationType,
+      image: req.file ? req.file.filename : null,
       ownerId: req.admin._id,
       role: req.admin.role === 'subadmin' ? 'Admin' : 'Admin',
     });
@@ -24,7 +26,7 @@ exports.createNotification = async (req, res) => {
   }
 };
 
-// ✅ Get notifications with optional title search and type filter
+// ✅ Get notifications (with search + filter)
 exports.getNotifications = async (req, res) => {
   try {
     const { title, notificationType } = req.query;
@@ -40,8 +42,7 @@ exports.getNotifications = async (req, res) => {
   }
 };
 
-
-// Get Notification By ID
+// ✅ Get Notification By ID
 exports.getNotificationById = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id).populate('ownerId');
@@ -53,7 +54,7 @@ exports.getNotificationById = async (req, res) => {
   }
 };
 
-// Update Notification
+// ✅ Update Notification
 exports.updateNotification = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
@@ -78,7 +79,7 @@ exports.updateNotification = async (req, res) => {
   }
 };
 
-// Delete Notification
+// ✅ Delete Notification
 exports.deleteNotification = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
@@ -96,116 +97,48 @@ exports.deleteNotification = async (req, res) => {
   }
 };
 
-
+// ✅ Send Notification to Single User (stored in DB only)
 exports.notifyUser = async (req, res) => {
   try {
-    const { userId, notificationId, title, message, orderId, notificationType } = req.body;
+    const { userId, title, description, notificationType } = req.body;
 
     const user = await UserModel.findById(userId);
-    if (!user || !user.playerId) {
-      return res.status(404).json({ message: 'User or Player ID not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    let notificationData = {};
-
-    // Use existing notification if notificationId is provided
-    if (notificationId) {
-      const existingNotification = await Notification.findById(notificationId);
-      if (!existingNotification) return res.status(404).json({ message: 'Notification not found' });
-
-      notificationData = {
-        title: existingNotification.title,
-        message: existingNotification.message,
-        notificationType: existingNotification.notificationType,
-        orderId: existingNotification.orderId
-      };
-    } else {
-      // Create a new notification object
-      if (!title || !message) {
-        return res.status(400).json({ message: 'Title and message are required' });
-      }
-      notificationData = { title, message, notificationType, orderId };
-      await Notification.create({ userId, ...notificationData });
-    }
-
-    // Send to user
-    await sendNotification(user.playerId, notificationData.title, notificationData.message, { orderId: notificationData.orderId });
-
-    res.status(200).json({ message: 'Notification sent to user' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to send notification', error: err.message });
-  }
-};
-
-// ✅ Send Notification to All Users
-exports.notifyAllUsers = async (req, res) => {
-  try {
-    const { notificationId, title, message, productId, categoryId, subCategoryId, notificationType } = req.body;
-
-    const users = await UserModel.find({ playerId: { $exists: true, $ne: null } });
-    if (users.length === 0) return res.status(404).json({ message: 'No users with player IDs found' });
-
-    let notificationData = {};
-
-    // Use existing notification if notificationId is provided
-    if (notificationId) {
-      const existingNotification = await Notification.findById(notificationId);
-      if (!existingNotification) return res.status(404).json({ message: 'Notification not found' });
-
-      notificationData = {
-        title: existingNotification.title,
-        message: existingNotification.message,
-        notificationType: existingNotification.notificationType,
-        productId: existingNotification.productId,
-        categoryId: existingNotification.categoryId,
-        subCategoryId: existingNotification.subCategoryId
-      };
-    } else {
-      if (!title || !message) {
-        return res.status(400).json({ message: 'Title and message are required' });
-      }
-      notificationData = { title, message, notificationType, productId, categoryId, subCategoryId };
-    }
-
-    const playerIds = users.map(u => u.playerId);
-    await sendNotification(playerIds, notificationData.title, notificationData.message, {
-      productId: notificationData.productId,
-      categoryId: notificationData.categoryId,
-      subCategoryId: notificationData.subCategoryId
+    const notification = await Notification.create({
+      userId,
+      title,
+      description,
+      notificationType,
+      ownerId: req.admin._id
     });
 
-    // Save notifications for all users if creating new
-    if (!notificationId) {
-      const notifications = users.map(u => ({
-        userId: u._id,
-        ...notificationData
-      }));
-      await Notification.insertMany(notifications);
-    }
-
-    res.status(200).json({ message: 'Notification sent to all users' });
+    res.status(200).json({ message: 'Notification stored for user', notification });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to send bulk notification', error: err.message });
+    res.status(500).json({ message: 'Failed to store notification', error: err.message });
   }
 };
 
+// ✅ Send Notification to All Users (bulk store in DB)
+exports.notifyAllUsers = async (req, res) => {
+  try {
+    const { title, description, notificationType } = req.body;
 
-// Helper: send notification via OneSignal
-const sendNotification = async (playerIds, title, message, data = {}) => {
-  const payload = {
-    app_id: process.env.ONESIGNAL_APP_ID,
-    include_player_ids: Array.isArray(playerIds) ? playerIds : [playerIds],
-    headings: { en: title },
-    contents: { en: message },
-    data
-  };
+    const users = await UserModel.find({});
+    if (!users.length) return res.status(404).json({ message: 'No users found' });
 
-  await axios.post('https://onesignal.com/api/v1/notifications', payload, {
-    headers: {
-      Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
-      'Content-Type': 'application/json'
-    }
-  });
+    const notifications = users.map(u => ({
+      userId: u._id,
+      title,
+      description,
+      notificationType,
+      ownerId: req.admin._id
+    }));
+
+    await Notification.insertMany(notifications);
+
+    res.status(200).json({ message: 'Notification stored for all users' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to store bulk notifications', error: err.message });
+  }
 };
