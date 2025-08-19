@@ -25,6 +25,7 @@ const adminActivityLogRoutes = require('./Routes/Admin/ActivityLog/activityLogRo
 const adminNotificationRoutes = require('./Routes/Admin/Notification/notificationRoutes')
 const adminComboCategoryRoutes = require('./Routes/Admin/ComboOffer/comboCategoryRoutes')
 const adminOrderRoutes= require('./Routes/Admin/Order/orderRoutes')
+const adminHomeSectionRoutes = require('./Routes/Admin/HomeSection/homeSectionRoutes')
 
 
 const userAuthRoutes = require('./Routes/User/Auth/authRoutes');
@@ -41,9 +42,7 @@ const userAddressRoutes = require('./Routes/User/Address/addressRoutes')
 const userOrderRoutes = require('./Routes/User/Order/orderRoutes')
 const userWalletRoutes = require('./Routes/User/Wallet/walletRoutes')
 const userNotificationRoutes = require('./Routes/User/Notification/notificationRoute')
-
-
-
+const userHomeSectionRoutes = require('./Routes/User/HomeSection/homeSectionRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -63,7 +62,7 @@ app.use('/api/admin/activity-log', adminActivityLogRoutes)
 app.use('/api/admin/notification', adminNotificationRoutes)
 app.use('/api/admin/combo-category',adminComboCategoryRoutes)
 app.use('/api/admin/order',adminOrderRoutes)
-
+app.use('/api/admin/home-section', adminHomeSectionRoutes);
 
 
 app.use('/api/user/auth', userAuthRoutes);
@@ -80,6 +79,7 @@ app.use('/api/user/address',userAddressRoutes)
 app.use('/api/user/order',userOrderRoutes)
 app.use('/api/user/wallet',userWalletRoutes)
 app.use('/api/user/notificaion',userNotificationRoutes)
+app.use('/api/user/home-section', userHomeSectionRoutes);
 
 
 

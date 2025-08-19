@@ -2,7 +2,6 @@ const Product = require('../../../Models/Admin/Products/productModel');
 const Wishlist = require('../../../Models/User/Wishlist/wishlistModel');
 const Cart = require('../../../Models/User/Cart/cartModel');
 
-// Helper function to get cart items map for a user
 const getCartItemsMap = async (userId) => {
   const cartItemsMap = new Map();
   if (userId) {
@@ -28,7 +27,6 @@ const getCartItemsMap = async (userId) => {
   return cartItemsMap;
 };
 
-// Helper function to get wishlist product IDs for a user
 const getWishlistProductIds = async (userId) => {
   if (!userId) return [];
   const wishlist = await Wishlist.findOne({ user: userId });
@@ -219,7 +217,6 @@ const getProductsBySubCategory = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 
 module.exports = {
   getAllProducts,

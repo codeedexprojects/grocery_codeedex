@@ -86,7 +86,6 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-
 // Delete user
 exports.deleteUser = async (req, res) => {
   try {
@@ -103,7 +102,6 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 
 // Search Users (Admin)
 exports.searchUsers = async (req, res) => {
