@@ -185,8 +185,45 @@ const getProductsByMainCategory = async (req, res) => {
   }
 };
 
+const getProductsBySubCategory = async (req, res) => {
+  try {
+    const { subCategoryId } = req.params;
+    const userId = req.user?._id;
+
+    let products = await Product.find({ subCategory: subCategoryId })
+      .populate('mainCategory', 'name')
+      .populate('category', 'name')
+      .populate('subCategory', 'name');
+
+    if (products.length === 0) {
+      return res.status(404).json({ message: 'No products found for this subcategory' });
+    }
+
+    const wishlistProductIds = await getWishlistProductIds(userId);
+    const cartItemsMap = await getCartItemsMap(userId);
+
+    products = products.map(product => {
+      const productObj = product.toObject();
+      const productId = product._id.toString();
+
+      return {
+        ...productObj,
+        isWishlist: wishlistProductIds.includes(productId),
+        cartItems: cartItemsMap.get(productId) || []
+      };
+    });
+
+    res.json(products);
+  } catch (err) {
+    console.error('Error fetching products by subcategory:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
 module.exports = {
   getAllProducts,
   getProductById,
-  getProductsByMainCategory
+  getProductsByMainCategory,
+  getProductsBySubCategory
 };

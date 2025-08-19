@@ -103,6 +103,7 @@ const deleteProduct = async (req, res) => {
 };
 
 
+
 const searchAndFilterProducts = async (req, res) => {
   try {
     const { search, stockFilter = 'all', priceFilter = 'all' } = req.query;
