@@ -7,6 +7,7 @@ exports.createOrder = async (req, res) => {
   try {
     const { checkoutId, shippingAddress, paymentMethod } = req.body;
     const userId = req.user._id;
+    
     const checkout = await Checkout.findOne({ _id: checkoutId, user: userId })
       .populate({
         path: 'cart',
@@ -15,26 +16,49 @@ exports.createOrder = async (req, res) => {
           { path: 'items.comboOffer' }
         ]
       });
+    
     if (!checkout) {
       return res.status(404).json({ message: 'Checkout not found' });
     }
+    
     const cart = checkout.cart;
-    // Create order
+    
+    const couponDiscount = cart.appliedCoupon ? cart.appliedCoupon.discount : 0;
+    const grandTotal = cart.totalPrice - couponDiscount;
+
     const order = new Order({
       user: userId,
       items: cart.items,
       totalPrice: cart.totalPrice,
       totalDiscount: cart.totalDiscount,
+      grandTotal: grandTotal,
       shippingAddress,
       paymentMethod: paymentMethod || 'COD'
     });
 
     await order.save();
 
-    // Clear cart after order
-    await Cart.findByIdAndUpdate(cart._id, { items: [], totalPrice: 0, totalDiscount: 0 });
+    const updatedCart = await Cart.findByIdAndUpdate(
+      cart._id, 
+      { 
+        $set: {
+          items: [], 
+          totalPrice: 0, 
+          totalDiscount: 0,
+          grandTotal: 0
+        },
+        $unset: {
+          appliedCoupon: "" 
+        }
+      },
+      { new: true } 
+    );
 
-    res.status(201).json({ message: 'Order created successfully', order });
+    res.status(201).json({ 
+      message: 'Order created successfully', 
+      order,
+      cart: updatedCart 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -60,6 +84,7 @@ exports.getOrderById = async (req, res) => {
       .populate('items.product')
       .populate('items.comboOffer')
       .populate('user', 'name email');
+    
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
     res.status(200).json(order);

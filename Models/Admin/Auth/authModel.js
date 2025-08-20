@@ -1,4 +1,3 @@
-// models/Admin.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
@@ -10,7 +9,6 @@ const adminSchema = new mongoose.Schema({
   permissions: { type: [String], default: ['*'] }
 }, { timestamps: true });
 
-// Hash password before saving
 adminSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   try {

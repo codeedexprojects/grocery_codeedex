@@ -1,6 +1,7 @@
 const Cart = require('../../../Models/User/Cart/cartModel');
 const Product = require('../../../Models/Admin/Products/productModel');
 const ComboOffer = require('../../../Models/Admin/ComboOffer/comboOfferModel');
+const Coupon = require("../../../Models/Admin/Coupon/couponModel")
 
 
 exports.addToCart = async (req, res) => {
@@ -136,24 +137,146 @@ exports.addToCart = async (req, res) => {
   }
 };
 
+exports.applyCoupon = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const userId = req.user._id;
 
-// Get Cart (updated to populate combo offers)
+    const cart = await Cart.findOne({ user: userId }).populate("items.product");
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
+
+    const coupon = await Coupon.findOne({ code, status: "active" })
+      .populate("applicableCategories")
+      .populate("applicableProducts");
+
+    if (!coupon) return res.status(404).json({ message: "Invalid coupon" });
+
+    if (new Date() > coupon.expiryDate) {
+      return res.status(400).json({ message: "Coupon has expired" });
+    }
+
+    if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) {
+      return res.status(400).json({ message: "Coupon usage limit reached" });
+    }
+
+    if (coupon.oneTimeUse && coupon.usedBy.includes(userId)) {
+      return res.status(400).json({ message: "You have already used this coupon" });
+    }
+
+    let applicableAmount = 0;
+    cart.items.forEach(item => {
+      const product = item.product;
+      if (!product) return;
+
+      if (
+        (coupon.applicationType === "category" &&
+          coupon.applicableCategories.some(cat => cat._id.equals(product.category))) ||
+        (coupon.applicationType === "product" &&
+          coupon.applicableProducts.some(p => p._id.equals(product._id))) ||
+        coupon.applicationType === "all"
+      ) {
+        applicableAmount += item.price * item.quantity;
+      }
+    });
+
+    if (applicableAmount <= 0) {
+      return res.status(400).json({ message: "Coupon not applicable to these items" });
+    }
+
+    let discount = 0;
+    if (coupon.discountType === "percentage") {
+      discount = (applicableAmount * coupon.discountValue) / 100;
+    } else if (coupon.discountType === "fixed") {
+      discount = Math.min(applicableAmount, coupon.discountValue);
+    }
+
+    
+    const grandTotal = cart.totalPrice - discount;
+
+    cart.totalDiscount = discount;
+    cart.grandTotal = grandTotal; 
+    cart.appliedCoupon = {
+      code: coupon.code,
+      discount: discount,
+      couponId: coupon._id
+    };
+
+    await cart.save();
+
+    res.status(200).json({
+      message: "Coupon applied successfully",
+      coupon: {
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        discountAmount: discount
+      },
+      totalPrice: cart.totalPrice,
+      grandTotal: grandTotal
+    });
+  } catch (error) {
+    console.error("Error applying coupon:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+exports.removeCoupon = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const cart = await Cart.findOne({ user: userId });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    if (!cart.appliedCoupon) {
+      return res.status(400).json({ message: "No coupon applied to this cart" });
+    }
+
+    cart.appliedCoupon = undefined;
+    cart.totalDiscount = 0;
+    cart.grandTotal = cart.totalPrice; 
+
+    await cart.save();
+
+    res.status(200).json({
+      message: "Coupon removed successfully",
+      cart: {
+        totalPrice: cart.totalPrice,
+        totalDiscount: 0,
+        grandTotal: cart.totalPrice
+      }
+    });
+  } catch (error) {
+    console.error("Error removing coupon:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+// Get Cart 
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user._id;
     const cart = await Cart.findOne({ user: userId })
       .populate('items.product')
-      .populate('items.comboOffer');
-    
-  if (!cart) {
+      .populate('items.comboOffer')
+      .populate('appliedCoupon.couponId');
+
+    if (!cart) {
       return res.status(200).json({
         user: userId,
         items: [],
         totalPrice: 0,
-        totalDiscount: 0
+        totalDiscount: 0,
+        grandTotal: 0,
+        appliedCoupon: null
       });
     }
-    let totalDiscount = 0;
+
+    let totalDiscount = cart.totalDiscount || 0;
     const updatedItems = await Promise.all(cart.items.map(async (item) => {
       if (item.isCombo && item.comboOffer) {
         const comboOffer = item.comboOffer;
@@ -187,8 +310,15 @@ exports.getCart = async (req, res) => {
     cart.items = updatedItems;
     cart.totalDiscount = totalDiscount;
     
-    res.status(200).json(cart);
+    
+    const grandTotal = cart.totalPrice - (cart.appliedCoupon ? cart.appliedCoupon.discount : 0);
+    
+    res.status(200).json({
+      ...cart.toObject(),
+      grandTotal: grandTotal
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -197,17 +327,75 @@ exports.getCart = async (req, res) => {
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user._id;
-    const cart = await Cart.findOne({ user: userId }).populate('items.product');
+    const cart = await Cart.findOne({ user: userId })
+      .populate('items.product')
+      .populate('items.comboOffer')
+      .populate('appliedCoupon.couponId');
+
     if (!cart) {
       return res.status(200).json({
         user: userId,
         items: [],
         totalPrice: 0,
-        totalDiscount: 0
+        totalDiscount: 0,
+        grandTotal: 0,
+        appliedCoupon: null
       });
     }
-    res.status(200).json(cart);
+
+  
+    let totalComboDiscount = 0;
+    const updatedItems = await Promise.all(cart.items.map(async (item) => {
+      if (item.isCombo && item.comboOffer) {
+        const comboOffer = item.comboOffer;
+        await comboOffer.populate('products.productId');
+        const originalPrice = comboOffer.products.reduce((sum, productItem) => {
+          const product = productItem.productId;
+          let price = product.price;
+          
+          if (productItem.weight) {
+            const weightStock = product.weightsAndStocks.find(
+              ws => ws.weight === productItem.weight && ws.measurm === productItem.measurm
+            );
+            if (weightStock) price = weightStock.weight_price;
+          }
+          
+          return sum + (price * productItem.quantity);
+        }, 0);
+        
+        const discountAmount = originalPrice - item.price;
+        totalComboDiscount += discountAmount * item.quantity;
+        
+        return {
+          ...item.toObject(),
+          originalPrice,
+          discountAmount
+        };
+      }
+      return item.toObject();
+    }));
+
+    
+    const couponDiscount = cart.appliedCoupon ? cart.appliedCoupon.discount : 0;
+    const totalDiscount = totalComboDiscount + couponDiscount;
+    
+    
+    const grandTotal = cart.grandTotal || (cart.totalPrice - couponDiscount);
+    
+    res.status(200).json({
+      _id: cart._id,
+      user: cart.user,
+      items: updatedItems,
+      totalPrice: cart.totalPrice,
+      totalDiscount: totalDiscount,
+      appliedCoupon: cart.appliedCoupon,
+      grandTotal: grandTotal, 
+      createdAt: cart.createdAt,
+      updatedAt: cart.updatedAt,
+      __v: cart.__v
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };

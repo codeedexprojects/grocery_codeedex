@@ -43,6 +43,7 @@ const userOrderRoutes = require('./Routes/User/Order/orderRoutes')
 const userWalletRoutes = require('./Routes/User/Wallet/walletRoutes')
 const userNotificationRoutes = require('./Routes/User/Notification/notificationRoute')
 const userHomeSectionRoutes = require('./Routes/User/HomeSection/homeSectionRoutes')
+const userComboOfferRoutes = require('./Routes/User/ComboOffer/comboOfferRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -80,6 +81,7 @@ app.use('/api/user/order',userOrderRoutes)
 app.use('/api/user/wallet',userWalletRoutes)
 app.use('/api/user/notificaion',userNotificationRoutes)
 app.use('/api/user/home-section', userHomeSectionRoutes);
+app.use('/api/user/combo-offer', userComboOfferRoutes);
 
 
 

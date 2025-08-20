@@ -1,4 +1,3 @@
-// routes/admin/subadminRoutes.js
 const express = require('express');
 const router = express.Router();
 const subadminController = require('../../../Controller/Admin/SubAdminManagement/subAdminManagementController');
