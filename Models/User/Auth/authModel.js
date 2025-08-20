@@ -11,7 +11,10 @@ const userSchema = new mongoose.Schema({
 
   referralCode: { type: String, unique: true },
   referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-  coins: { type: Number, default: 0 },
+
+  coins: { type: Number, default: 0 },   // total awarded coins
+  coinProgress: { type: Number, default: 0 }, 
+
   role: { type: String, default: 'user' },
 
   status: { 
