@@ -1,36 +1,46 @@
 const CoinSettings = require("../Models/Admin/CoinSetting/coinSettingModel");
 
-const getCoinProgress = async (cart) => {
+const getCoinProgress = async (cart, user) => {
   try {
     const settings = await CoinSettings.findOne();
-    if (!settings) return { coinsEarned: 0, progress: 0, remaining: 0 };
+    if (!settings) {
+      return { threshold: 0, coinsFromProgress: 0, totalCoinsAfterOrder: 0, nextThresholdRemaining: 0 };
+    }
 
     const { purchaseThreshold, coinsPerThreshold } = settings;
 
-    // 🛒 Calculate cart total
+    // 🛒 Cart total
     let totalAmount = 0;
     for (const item of cart.items) {
       totalAmount += item.quantity * item.price;
     }
 
-    // 🪙 Coins earned (proportional, even before reaching threshold)
-    const coinsEarned = (totalAmount / purchaseThreshold) * coinsPerThreshold;
+    // 👤 User's last saved progress
+    let lastProgress = user?.coinProgress || 0;
 
-    // 📊 Progress towards next threshold (percentage of threshold reached)
-    const progress = (totalAmount % purchaseThreshold) / purchaseThreshold * 100;
+    // ✅ Coins already earned till now
+    const coinsFromProgress = (lastProgress / purchaseThreshold) * coinsPerThreshold;
 
-    // 💰 Remaining to earn the *next full threshold worth* of coins
-    const remaining = purchaseThreshold - (totalAmount % purchaseThreshold);
+    // 🆕 Simulate after adding this order
+    let combinedProgress = lastProgress + totalAmount;
+
+    // 🎯 Total coins possible after this order
+    const totalCoinsAfterOrder = (combinedProgress / purchaseThreshold) * coinsPerThreshold;
+
+    // 💡 Remaining amount needed for next threshold
+    const nextThresholdRemaining = purchaseThreshold - (combinedProgress % purchaseThreshold);
 
     return {
-      coinsEarned: Math.floor(coinsEarned),  // round down if you only issue full coins
-      progress: Math.round(progress),
-      remaining
+      threshold: purchaseThreshold,
+      coinsFromProgress,        // already earned till now
+      totalCoinsAfterOrder,     // ✅ coins that can be earned after this order
+      nextThresholdRemaining
     };
   } catch (err) {
     console.error("Error calculating coin progress:", err);
-    return { coinsEarned: 0, progress: 0, remaining: 0 };
+    return { threshold: 0, coinsFromProgress: 0, totalCoinsAfterOrder: 0, nextThresholdRemaining: 0 };
   }
 };
+
 
 module.exports = { getCoinProgress };
