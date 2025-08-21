@@ -1,135 +1,116 @@
 const Cart = require('../../../Models/User/Cart/cartModel');
 const Product = require('../../../Models/Admin/Products/productModel');
 const ComboOffer = require('../../../Models/Admin/ComboOffer/comboOfferModel');
-const Coupon = require("../../../Models/Admin/Coupon/couponModel")
+const Coupon = require("../../../Models/Admin/Coupon/couponModel");
 
-
+// Add to Cart - Updated with proper calculations
 exports.addToCart = async (req, res) => {
   try {
     const { productId, comboOfferId, weight, measurm, quantity } = req.body;
     const userId = req.user._id;
+    
     if (!productId && !comboOfferId) {
       return res.status(400).json({ message: 'Either productId or comboOfferId is required' });
     }
+    
     let cart = await Cart.findOne({ user: userId });
+    let itemPrice = 0;
+    let isCombo = false;
+
     if (comboOfferId) {
       const comboOffer = await ComboOffer.findById(comboOfferId).populate('products.productId');
       if (!comboOffer) return res.status(404).json({ message: 'Combo offer not found' });
-    
+      
+      // Calculate combo price
       let comboPrice = 0;
-      if (comboOffer.discountType === 'percentage') {
-        const totalOriginalPrice = comboOffer.products.reduce((sum, item) => {
-          const product = item.productId;
-          let price = product.price;
-          
-          if (item.weight) {
-            const weightStock = product.weightsAndStocks.find(
-              ws => ws.weight === item.weight && ws.measurm === item.measurm
-            );
-            if (weightStock) price = weightStock.weight_price;
-          }
-          
-          return sum + (price * item.quantity);
-        }, 0);
+      const totalOriginalPrice = comboOffer.products.reduce((sum, item) => {
+        const product = item.productId;
+        let price = product.price;
         
+        if (item.weight) {
+          const weightStock = product.weightsAndStocks.find(
+            ws => ws.weight === item.weight && ws.measurm === item.measurm
+          );
+          if (weightStock) price = weightStock.weight_price;
+        }
+        
+        return sum + (price * item.quantity);
+      }, 0);
+      
+      if (comboOffer.discountType === 'percentage') {
         comboPrice = totalOriginalPrice * (1 - comboOffer.discountValue / 100);
       } else {
-        const totalOriginalPrice = comboOffer.products.reduce((sum, item) => {
-          const product = item.productId;
-          let price = product.price;
-          
-          if (item.weight) {
-            const weightStock = product.weightsAndStocks.find(
-              ws => ws.weight === item.weight && ws.measurm === item.measurm
-            );
-            if (weightStock) price = weightStock.weight_price;
-          }
-          
-          return sum + (price * item.quantity);
-        }, 0);
-        
         comboPrice = totalOriginalPrice - comboOffer.discountValue;
       }
-
-      if (!cart) {
-        cart = new Cart({
-          user: userId,
-          items: [{
-            comboOffer: comboOfferId,
-            price: comboPrice,
-            quantity: quantity || 1,
-            isCombo: true
-          }],
-          totalPrice: comboPrice * (quantity || 1)
-        });
-      } else {
-        const existingCombo = cart.items.find(
-          item => item.comboOffer && item.comboOffer.toString() === comboOfferId
-        );
-
-        if (existingCombo) {
-          existingCombo.quantity += quantity || 1;
-        } else {
-          cart.items.push({
-            comboOffer: comboOfferId,
-            price: comboPrice,
-            quantity: quantity || 1,
-            isCombo: true
-          });
-        }
-
-        cart.totalPrice = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      }
+      
+      itemPrice = comboPrice;
+      isCombo = true;
     } else {
       const product = await Product.findById(productId);
       if (!product) return res.status(404).json({ message: 'Product not found' });
       
-      let price = product.price;
+      itemPrice = product.price;
       if (weight) {
         const weightStock = product.weightsAndStocks.find(
           w => w.weight === weight && w.measurm === measurm
         );
-        if (weightStock) price = weightStock.weight_price;
-      }
-
-      if (!cart) {
-        cart = new Cart({
-          user: userId,
-          items: [{
-            product: productId,
-            weight,
-            measurm,
-            quantity: quantity || 1,
-            price,
-            isCombo: false
-          }],
-          totalPrice: price * (quantity || 1)
-        });
-      } else {
-        const existingItem = cart.items.find(
-          item => !item.isCombo &&
-                 item.product.toString() === productId &&
-                 item.weight === weight &&
-                 item.measurm === measurm
-        );
-
-        if (existingItem) {
-          existingItem.quantity += quantity || 1;
-        } else {
-          cart.items.push({
-            product: productId,
-            weight,
-            measurm,
-            quantity: quantity || 1,
-            price,
-            isCombo: false
-          });
-        }
-
-        cart.totalPrice = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        if (weightStock) itemPrice = weightStock.weight_price;
       }
     }
+
+    if (!cart) {
+      cart = new Cart({
+        user: userId,
+        items: [],
+        subtotal: 0,
+        discount: 0,
+        couponDiscount: 0,
+        total: 0
+      });
+    }
+
+    
+    if (comboOfferId) {
+      const existingCombo = cart.items.find(
+        item => item.comboOffer && item.comboOffer.toString() === comboOfferId
+      );
+
+      if (existingCombo) {
+        existingCombo.quantity += quantity || 1;
+      } else {
+        cart.items.push({
+          comboOffer: comboOfferId,
+          price: itemPrice,
+          quantity: quantity || 1,
+          isCombo: true
+        });
+      }
+    } else {
+      const existingItem = cart.items.find(
+        item => !item.isCombo &&
+               item.product.toString() === productId &&
+               item.weight === weight &&
+               item.measurm === measurm
+      );
+
+      if (existingItem) {
+        existingItem.quantity += quantity || 1;
+      } else {
+        cart.items.push({
+          product: productId,
+          weight,
+          measurm,
+          quantity: quantity || 1,
+          price: itemPrice,
+          isCombo: false
+        });
+      }
+    }
+
+    // Recalculate cart totals
+    await recalculateCartTotals(cart);
     await cart.save();
+    
     res.status(200).json({ message: 'Item added to cart', cart });
   } catch (err) {
     console.error(err);
@@ -137,6 +118,7 @@ exports.addToCart = async (req, res) => {
   }
 };
 
+// Apply Coupon - Updated with proper calculations
 exports.applyCoupon = async (req, res) => {
   try {
     const { code } = req.body;
@@ -153,6 +135,7 @@ exports.applyCoupon = async (req, res) => {
 
     if (!coupon) return res.status(404).json({ message: "Invalid coupon" });
 
+    // Validate coupon
     if (new Date() > coupon.expiryDate) {
       return res.status(400).json({ message: "Coupon has expired" });
     }
@@ -165,6 +148,7 @@ exports.applyCoupon = async (req, res) => {
       return res.status(400).json({ message: "You have already used this coupon" });
     }
 
+    // Calculate applicable amount for coupon
     let applicableAmount = 0;
     cart.items.forEach(item => {
       const product = item.product;
@@ -185,24 +169,24 @@ exports.applyCoupon = async (req, res) => {
       return res.status(400).json({ message: "Coupon not applicable to these items" });
     }
 
-    let discount = 0;
+    // Calculate coupon discount
+    let couponDiscount = 0;
     if (coupon.discountType === "percentage") {
-      discount = (applicableAmount * coupon.discountValue) / 100;
+      couponDiscount = (applicableAmount * coupon.discountValue) / 100;
     } else if (coupon.discountType === "fixed") {
-      discount = Math.min(applicableAmount, coupon.discountValue);
+      couponDiscount = Math.min(applicableAmount, coupon.discountValue);
     }
 
-    
-    const grandTotal = cart.totalPrice - discount;
-
-    cart.totalDiscount = discount;
-    cart.grandTotal = grandTotal; 
+    // Update cart with coupon
+    cart.couponDiscount = couponDiscount;
     cart.appliedCoupon = {
       code: coupon.code,
-      discount: discount,
+      discount: couponDiscount,
       couponId: coupon._id
     };
 
+    // Recalculate totals
+    await recalculateCartTotals(cart);
     await cart.save();
 
     res.status(200).json({
@@ -211,10 +195,14 @@ exports.applyCoupon = async (req, res) => {
         code: coupon.code,
         discountType: coupon.discountType,
         discountValue: coupon.discountValue,
-        discountAmount: discount
+        discountAmount: couponDiscount
       },
-      totalPrice: cart.totalPrice,
-      grandTotal: grandTotal
+      cart: {
+        subtotal: cart.subtotal,
+        discount: cart.discount,
+        couponDiscount: cart.couponDiscount,
+        total: cart.total
+      }
     });
   } catch (error) {
     console.error("Error applying coupon:", error);
@@ -222,6 +210,7 @@ exports.applyCoupon = async (req, res) => {
   }
 };
 
+// Remove Coupon
 exports.removeCoupon = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -236,17 +225,19 @@ exports.removeCoupon = async (req, res) => {
     }
 
     cart.appliedCoupon = undefined;
-    cart.totalDiscount = 0;
-    cart.grandTotal = cart.totalPrice; 
+    cart.couponDiscount = 0;
 
+    // Recalculate totals
+    await recalculateCartTotals(cart);
     await cart.save();
 
     res.status(200).json({
       message: "Coupon removed successfully",
       cart: {
-        totalPrice: cart.totalPrice,
-        totalDiscount: 0,
-        grandTotal: cart.totalPrice
+        subtotal: cart.subtotal,
+        discount: cart.discount,
+        couponDiscount: cart.couponDiscount,
+        total: cart.total
       }
     });
   } catch (error) {
@@ -255,8 +246,7 @@ exports.removeCoupon = async (req, res) => {
   }
 };
 
-
-// Get Cart 
+// Get Cart
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -269,137 +259,22 @@ exports.getCart = async (req, res) => {
       return res.status(200).json({
         user: userId,
         items: [],
-        totalPrice: 0,
-        totalDiscount: 0,
-        grandTotal: 0,
+        subtotal: 0,
+        discount: 0,
+        couponDiscount: 0,
+        total: 0,
         appliedCoupon: null
       });
     }
 
-    let totalDiscount = cart.totalDiscount || 0;
-    const updatedItems = await Promise.all(cart.items.map(async (item) => {
-      if (item.isCombo && item.comboOffer) {
-        const comboOffer = item.comboOffer;
-        await comboOffer.populate('products.productId');
-        const originalPrice = comboOffer.products.reduce((sum, productItem) => {
-          const product = productItem.productId;
-          let price = product.price;
-          
-          if (productItem.weight) {
-            const weightStock = product.weightsAndStocks.find(
-              ws => ws.weight === productItem.weight && ws.measurm === productItem.measurm
-            );
-            if (weightStock) price = weightStock.weight_price;
-          }
-          
-          return sum + (price * productItem.quantity);
-        }, 0);
-        
-        const discountAmount = originalPrice - item.price;
-        totalDiscount += discountAmount * item.quantity;
-        
-        return {
-          ...item.toObject(),
-          originalPrice,
-          discountAmount
-        };
-      }
-      return item;
-    }));
-    
-    cart.items = updatedItems;
-    cart.totalDiscount = totalDiscount;
-    
-    
-    const grandTotal = cart.totalPrice - (cart.appliedCoupon ? cart.appliedCoupon.discount : 0);
-    
-    res.status(200).json({
-      ...cart.toObject(),
-      grandTotal: grandTotal
-    });
+    res.status(200).json(cart);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-
-exports.getCart = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const cart = await Cart.findOne({ user: userId })
-      .populate('items.product')
-      .populate('items.comboOffer')
-      .populate('appliedCoupon.couponId');
-
-    if (!cart) {
-      return res.status(200).json({
-        user: userId,
-        items: [],
-        totalPrice: 0,
-        totalDiscount: 0,
-        grandTotal: 0,
-        appliedCoupon: null
-      });
-    }
-
-  
-    let totalComboDiscount = 0;
-    const updatedItems = await Promise.all(cart.items.map(async (item) => {
-      if (item.isCombo && item.comboOffer) {
-        const comboOffer = item.comboOffer;
-        await comboOffer.populate('products.productId');
-        const originalPrice = comboOffer.products.reduce((sum, productItem) => {
-          const product = productItem.productId;
-          let price = product.price;
-          
-          if (productItem.weight) {
-            const weightStock = product.weightsAndStocks.find(
-              ws => ws.weight === productItem.weight && ws.measurm === productItem.measurm
-            );
-            if (weightStock) price = weightStock.weight_price;
-          }
-          
-          return sum + (price * productItem.quantity);
-        }, 0);
-        
-        const discountAmount = originalPrice - item.price;
-        totalComboDiscount += discountAmount * item.quantity;
-        
-        return {
-          ...item.toObject(),
-          originalPrice,
-          discountAmount
-        };
-      }
-      return item.toObject();
-    }));
-
-    
-    const couponDiscount = cart.appliedCoupon ? cart.appliedCoupon.discount : 0;
-    const totalDiscount = totalComboDiscount + couponDiscount;
-    
-    
-    const grandTotal = cart.grandTotal || (cart.totalPrice - couponDiscount);
-    
-    res.status(200).json({
-      _id: cart._id,
-      user: cart.user,
-      items: updatedItems,
-      totalPrice: cart.totalPrice,
-      totalDiscount: totalDiscount,
-      appliedCoupon: cart.appliedCoupon,
-      grandTotal: grandTotal, 
-      createdAt: cart.createdAt,
-      updatedAt: cart.updatedAt,
-      __v: cart.__v
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
+// Update Cart Item
 exports.updateCartItem = async (req, res) => {
   try {
     const { productId, weight, measurm, quantity } = req.body;
@@ -417,15 +292,18 @@ exports.updateCartItem = async (req, res) => {
     if (!item) return res.status(404).json({ message: 'Item not found' });
 
     item.quantity = quantity;
-    cart.totalPrice = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
+    
+    // Recalculate totals
+    await recalculateCartTotals(cart);
     await cart.save();
+    
     res.status(200).json({ message: 'Cart updated', cart });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+// Remove Cart Item
 exports.removeCartItem = async (req, res) => {
   try {
     const { productId, weight, measurm } = req.body;
@@ -440,11 +318,53 @@ exports.removeCartItem = async (req, res) => {
              i.measurm === measurm)
     );
 
-    cart.totalPrice = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
+    // Recalculate totals
+    await recalculateCartTotals(cart);
     await cart.save();
+    
     res.status(200).json({ message: 'Item removed', cart });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Helper function to recalculate cart totals
+async function recalculateCartTotals(cart) {
+  // Calculate subtotal (sum of all items)
+  cart.subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // Calculate product/combo discounts
+  let productDiscounts = 0;
+  
+  for (const item of cart.items) {
+    if (item.isCombo && item.comboOffer) {
+      const comboOffer = await ComboOffer.findById(item.comboOffer).populate('products.productId');
+      if (comboOffer) {
+        const originalPrice = comboOffer.products.reduce((sum, productItem) => {
+          const product = productItem.productId;
+          let price = product.price;
+          
+          if (productItem.weight) {
+            const weightStock = product.weightsAndStocks.find(
+              ws => ws.weight === productItem.weight && ws.measurm === productItem.measurm
+            );
+            if (weightStock) price = weightStock.weight_price;
+          }
+          
+          return sum + (price * productItem.quantity);
+        }, 0);
+        
+        const discountPerItem = originalPrice - item.price;
+        productDiscounts += discountPerItem * item.quantity;
+      }
+    }
+  }
+  
+  cart.discount = productDiscounts;
+  
+  // Calculate total (subtotal - all discounts)
+  cart.total = cart.subtotal - cart.discount - cart.couponDiscount;
+  
+  // Ensure total is not negative
+  if (cart.total < 0) cart.total = 0;
+}

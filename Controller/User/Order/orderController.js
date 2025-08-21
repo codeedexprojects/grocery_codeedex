@@ -2,7 +2,7 @@ const Order = require('../../../Models/User/Order/orderModel');
 const Checkout = require('../../../Models/User/Checkout/checkoutModel');
 const Cart = require('../../../Models/User/Cart/cartModel');
 
-// ✅ Create order from checkout
+// Create order from checkout
 exports.createOrder = async (req, res) => {
   try {
     const { checkoutId, shippingAddress, paymentMethod } = req.body;
@@ -23,29 +23,29 @@ exports.createOrder = async (req, res) => {
     
     const cart = checkout.cart;
     
-    const couponDiscount = cart.appliedCoupon ? cart.appliedCoupon.discount : 0;
-    const grandTotal = cart.totalPrice - couponDiscount;
-
     const order = new Order({
       user: userId,
       items: cart.items,
-      totalPrice: cart.totalPrice,
-      totalDiscount: cart.totalDiscount,
-      grandTotal: grandTotal,
+      subtotal: cart.subtotal,
+      discount: cart.discount,
+      couponDiscount: cart.couponDiscount,
+      total: cart.total,
       shippingAddress,
       paymentMethod: paymentMethod || 'COD'
     });
 
     await order.save();
 
+    // Clear the cart
     const updatedCart = await Cart.findByIdAndUpdate(
       cart._id, 
       { 
         $set: {
           items: [], 
-          totalPrice: 0, 
-          totalDiscount: 0,
-          grandTotal: 0
+          subtotal: 0, 
+          discount: 0,
+          couponDiscount: 0,
+          total: 0
         },
         $unset: {
           appliedCoupon: "" 
@@ -65,18 +65,21 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// ✅ Get user orders
+// Get user orders
 exports.getUserOrders = async (req, res) => {
   try {
     const userId = req.user._id;
-    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: userId })
+      .populate('items.product')
+      .populate('items.comboOffer')
+      .sort({ createdAt: -1 });
     res.status(200).json(orders);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// ✅ Get single order
+// Get single order
 exports.getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -93,7 +96,7 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
-// ✅ Update order status (admin use)
+// Update order status (admin use)
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
