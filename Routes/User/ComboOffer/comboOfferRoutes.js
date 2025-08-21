@@ -5,5 +5,6 @@ const comboOfferController = require('../../../Controller/User/ComboOffer/comboO
 router.get('/get',  comboOfferController.getAllComboOffers);
 router.get('/get/:id', comboOfferController.getComboOfferById);
 router.get('/search', comboOfferController.searchComboOffers)
+router.get('/list', comboOfferController.getCombosByCategory);
 
 module.exports = router;

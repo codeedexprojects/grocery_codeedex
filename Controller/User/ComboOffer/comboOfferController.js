@@ -235,3 +235,89 @@ exports.searchComboOffers = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+// Get All Combo Offers grouped by Category
+exports.getCombosByCategory = async (req, res) => {
+  try {
+    // Get all active categories
+    const categories = await ComboCategory.find({ status: true }).sort({ createdAt: 1 });
+
+    let result = [];
+
+    for (const category of categories) {
+      // Find offers under this category
+      const combos = await ComboOffer.find({ category: category._id, isActive: true })
+        .populate('category', 'title status')
+        .populate('products.productId', 'name price weightsAndStocks images');
+
+      // Enhance combos with price calculations
+      const enhancedCombos = combos.map(combo => {
+        let totalOriginalPrice = 0;
+
+        const productsWithDetails = combo.products.map(p => {
+          const product = p.productId;
+          let weightPrice = null;
+          let productImage = null;
+          let productTotalPrice = 0;
+
+          if (product && product.weightsAndStocks) {
+            const match = product.weightsAndStocks.find(
+              ws => ws.weight === p.weight && ws.measurm === p.measurm
+            );
+            if (match) {
+              weightPrice = match.weight_price;
+              productTotalPrice = weightPrice * p.quantity;
+              totalOriginalPrice += productTotalPrice;
+            }
+          } else if (product && product.price) {
+            productTotalPrice = product.price * p.quantity;
+            totalOriginalPrice += productTotalPrice;
+          }
+
+          if (product && product.images && product.images.length > 0) {
+            productImage = product.images[0];
+          }
+
+          return {
+            ...p.toObject(),
+            weightPrice,
+            productTotalPrice,
+            productImage,
+            productName: product?.name || 'N/A'
+          };
+        });
+
+        let discountedPrice = totalOriginalPrice;
+        if (combo.discountType === 'fixed') {
+          discountedPrice = totalOriginalPrice - combo.discountValue;
+        } else if (combo.discountType === 'percentage') {
+          discountedPrice = totalOriginalPrice - (totalOriginalPrice * combo.discountValue / 100);
+        }
+
+        discountedPrice = Math.max(0, discountedPrice);
+
+        return {
+          ...combo.toObject(),
+          products: productsWithDetails,
+          totalOriginalPrice,
+          discountedPrice,
+          totalSavings: totalOriginalPrice - discountedPrice
+        };
+      });
+
+      result.push({
+        category: {
+          _id: category._id,
+          title: category.title,
+          status: category.status
+        },
+        offers: enhancedCombos
+      });
+    }
+
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.error("Get Combos By Category Error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
