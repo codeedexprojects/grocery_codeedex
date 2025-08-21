@@ -46,12 +46,12 @@ const loginAdmin = async (req, res) => {
         id: admin._id,
         name: admin.name,
         email: admin.email,
+        role: admin.role, // always include role
       }
     };
 
-    // if subadmin, include role & permissions
+    // include permissions only if subadmin
     if (admin.role === 'subadmin') {
-      responseData.admin.role = admin.role;
       responseData.admin.permissions = admin.permissions;
     }
 
@@ -62,5 +62,6 @@ const loginAdmin = async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
 
 module.exports = { registerAdmin, loginAdmin };
