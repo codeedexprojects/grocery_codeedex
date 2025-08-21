@@ -3,7 +3,8 @@ const TimeSale = require('../../../Models/Admin/TimeSale/timeSaleModel');
 // Add a Time Sale Product
 exports.addTimeSale = async (req, res) => {
   try {
-    const { productId, title, image, startTime, endTime } = req.body;
+    const { productId, title, startTime, endTime } = req.body;
+    const image = req.file ? req.file.path : null;  // get file path
 
     if (!productId || !title || !image || !startTime || !endTime) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
@@ -32,6 +33,7 @@ exports.addTimeSale = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
 
 // Get All Time Sale Products
 exports.getTimeSales = async (req, res) => {
