@@ -64,46 +64,44 @@ exports.applyReferralCode = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if reclaimed account
-    const reclaimCheck = await DeletedUser.findOne({
-      $or: [{ email: user.email }, { number: user.number }]
-    });
+    const reclaimConditions = [];
+    if (user.email) reclaimConditions.push({ email: user.email });
+    if (user.number) reclaimConditions.push({ number: user.number });
+
+    let reclaimCheck = null;
+    if (reclaimConditions.length > 0) {
+      reclaimCheck = await DeletedUser.findOne({ $or: reclaimConditions });
+    }
+
     if (reclaimCheck) {
       return res.status(400).json({
         message: "Referral benefits are not available for reclaimed accounts"
       });
     }
 
-    // Prevent multiple use
     if (user.referredBy) {
       return res.status(400).json({ message: "Referral code already applied" });
     }
 
-    // Find referrer
     const referrer = await User.findOne({ referralCode });
     if (!referrer) {
       return res.status(400).json({ message: "Invalid referral code" });
     }
 
-    // Prevent self-referral
     if (referrer._id.toString() === user._id.toString()) {
       return res.status(400).json({ message: "You cannot refer yourself" });
     }
 
-    // Apply referral
     user.referredBy = referrer._id;
     await user.save();
 
-    // Get referral bonus
     const coinSettings = await CoinSettings.findOne();
     const referralBonus = coinSettings?.referralBonus || 0;
 
     if (referralBonus > 0) {
-      // Update referrer coins
       referrer.coins += referralBonus;
       await referrer.save();
 
-      // Log wallet transaction for referrer
       await WalletTransaction.create({
         userId: referrer._id,
         type: "credit",
@@ -119,6 +117,7 @@ exports.applyReferralCode = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 // DELETE PROFILE (Minimal Data Storage)
