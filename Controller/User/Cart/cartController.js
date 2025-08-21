@@ -2,6 +2,7 @@ const Cart = require('../../../Models/User/Cart/cartModel');
 const Product = require('../../../Models/Admin/Products/productModel');
 const ComboOffer = require('../../../Models/Admin/ComboOffer/comboOfferModel');
 const Coupon = require("../../../Models/Admin/Coupon/couponModel");
+const CoinSettings = require('../../../Models/Admin/CoinSetting/coinSettingModel');
 
 // Add to Cart - Updated with proper calculations
 exports.addToCart = async (req, res) => {
@@ -250,27 +251,39 @@ exports.removeCoupon = async (req, res) => {
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user._id;
+
+    // Get user cart
     const cart = await Cart.findOne({ user: userId })
       .populate('items.product')
       .populate('items.comboOffer')
       .populate('appliedCoupon.couponId');
 
+    // Get coin settings (assuming you only have one settings doc)
+    const coinSettings = await CoinSettings.findOne().sort({ createdAt: -1 });
+
     if (!cart) {
       return res.status(200).json({
+        success: true,
         user: userId,
         items: [],
         subtotal: 0,
         discount: 0,
         couponDiscount: 0,
         total: 0,
-        appliedCoupon: null
+        appliedCoupon: null,
+        settings: coinSettings || null
       });
     }
 
-    res.status(200).json(cart);
+    res.status(200).json({
+      success: true,
+      ...cart.toObject(),
+      settings: coinSettings || null
+    });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Get Cart Error:", err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

@@ -1,6 +1,9 @@
 const Order = require('../../../Models/User/Order/orderModel');
 const Checkout = require('../../../Models/User/Checkout/checkoutModel');
 const Cart = require('../../../Models/User/Cart/cartModel');
+const User = require('../../../Models/User/Auth/authModel')
+const CoinSettings = require('../../../Models/Admin/CoinSetting/coinSettingModel')
+
 
 // Create order from checkout
 exports.createOrder = async (req, res) => {
@@ -22,7 +25,8 @@ exports.createOrder = async (req, res) => {
     }
     
     const cart = checkout.cart;
-    
+
+    // ✅ Create order
     const order = new Order({
       user: userId,
       items: cart.items,
@@ -36,7 +40,24 @@ exports.createOrder = async (req, res) => {
 
     await order.save();
 
-    // Clear the cart
+    // ✅ Award coins logic
+    const settings = await CoinSettings.findOne();
+    if (settings) {
+      const { purchaseThreshold, coinsPerThreshold } = settings;
+
+     
+      const thresholdsMet = Math.floor(order.total / purchaseThreshold);
+      const coinsEarned = thresholdsMet * coinsPerThreshold;
+
+      if (coinsEarned > 0) {
+        await User.findByIdAndUpdate(userId, { $inc: { coins: coinsEarned } });
+      }
+
+      order.coinsEarned = coinsEarned; 
+      await order.save();
+    }
+
+    // ✅ Clear cart
     const updatedCart = await Cart.findByIdAndUpdate(
       cart._id, 
       { 
@@ -47,9 +68,7 @@ exports.createOrder = async (req, res) => {
           couponDiscount: 0,
           total: 0
         },
-        $unset: {
-          appliedCoupon: "" 
-        }
+        $unset: { appliedCoupon: "" }
       },
       { new: true } 
     );

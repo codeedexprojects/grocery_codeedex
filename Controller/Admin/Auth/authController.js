@@ -34,21 +34,31 @@ const loginAdmin = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: admin._id, email: admin.email, role:admin.role, permissions: admin.permissions },
+      { id: admin._id, email: admin.email, role: admin.role, permissions: admin.permissions },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    res.json({
+    // base response
+    const responseData = {
       token,
       admin: {
         id: admin._id,
         name: admin.name,
-        email: admin.email
+        email: admin.email,
       }
-    });
+    };
+
+    // if subadmin, include role & permissions
+    if (admin.role === 'subadmin') {
+      responseData.admin.role = admin.role;
+      responseData.admin.permissions = admin.permissions;
+    }
+
+    res.json(responseData);
+
   } catch (error) {
-    console.error(error);
+    console.error("Login Error:", error);
     res.status(500).json({ message: 'Server Error' });
   }
 };
