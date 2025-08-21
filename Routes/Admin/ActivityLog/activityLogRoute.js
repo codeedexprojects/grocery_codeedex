@@ -4,9 +4,9 @@ const verifyAdmin = require('../../../Middlewares/jwtMiddleware'); // your JWT m
 const activityController = require('../../../Controller/Admin/ActivityLog/activityLogController');
 
 // Only admins/subadmins can access
-router.get('/', verifyAdmin(['superadmin', 'subadmin']), activityController.getAllActivityLogs);
+router.get('/', verifyAdmin(['admin', 'subadmin']), activityController.getAllActivityLogs);
 
 // Logs by specific admin
-router.get('/:adminId', verifyAdmin(['superadmin', 'subadmin']), activityController.getLogsByAdmin);
+router.get('/:adminId', verifyAdmin(['admin', 'subadmin']), activityController.getLogsByAdmin);
 
 module.exports = router;
