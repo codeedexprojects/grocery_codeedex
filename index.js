@@ -26,6 +26,7 @@ const adminNotificationRoutes = require('./Routes/Admin/Notification/notificatio
 const adminComboCategoryRoutes = require('./Routes/Admin/ComboOffer/comboCategoryRoutes')
 const adminOrderRoutes= require('./Routes/Admin/Order/orderRoutes')
 const adminHomeSectionRoutes = require('./Routes/Admin/HomeSection/homeSectionRoutes')
+const adminDeliveryChargeRoutes = require('./Routes/Admin/DeliveryCharge/deliveryChargeRoutes');
 
 
 const userAuthRoutes = require('./Routes/User/Auth/authRoutes');
@@ -64,6 +65,7 @@ app.use('/api/admin/notification', adminNotificationRoutes)
 app.use('/api/admin/combo-category',adminComboCategoryRoutes)
 app.use('/api/admin/order',adminOrderRoutes)
 app.use('/api/admin/home-section', adminHomeSectionRoutes);
+app.use('/api/admin/delivery-charge', adminDeliveryChargeRoutes);
 
 
 app.use('/api/user/auth', userAuthRoutes);
