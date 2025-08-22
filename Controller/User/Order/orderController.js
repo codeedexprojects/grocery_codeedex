@@ -4,8 +4,7 @@ const Cart = require('../../../Models/User/Cart/cartModel');
 const User = require('../../../Models/User/Auth/authModel')
 const CoinSettings = require('../../../Models/Admin/CoinSetting/coinSettingModel')
 
-
-// Create order from checkout
+// Create order from checkout - UPDATED WITH DELIVERY CHARGE INTEGRATION
 exports.createOrder = async (req, res) => {
   try {
     const { checkoutId, shippingAddress, paymentMethod } = req.body;
@@ -25,28 +24,50 @@ exports.createOrder = async (req, res) => {
     }
     
     const cart = checkout.cart;
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-    // ✅ Create order
+    if (checkout.coinsUsed > 0) {
+      if (user.coins < checkout.coinsUsed) {
+        return res.status(400).json({ 
+          message: 'Insufficient coins', 
+          availableCoins: user.coins,
+          requiredCoins: checkout.coinsUsed
+        });
+      }
+    }
+    
     const order = new Order({
       user: userId,
       items: cart.items,
-      subtotal: cart.subtotal,
-      discount: cart.discount,
-      couponDiscount: cart.couponDiscount,
-      total: cart.total,
+      subtotal: checkout.subtotal || cart.subtotal,
+      discount: checkout.discount || cart.discount,
+      couponDiscount: checkout.couponDiscount || cart.couponDiscount,
+      coinDiscount: checkout.coinDiscount || 0,
+      coinsUsed: checkout.coinsUsed || 0,
+      deliveryCharge: checkout.deliveryCharge || cart.deliveryCharge || 0,  
+      total: checkout.total || cart.total,
       shippingAddress,
       paymentMethod: paymentMethod || 'COD'
     });
 
     await order.save();
 
-    // ✅ Award coins logic
+    if (checkout.coinsUsed > 0) {
+      await User.findByIdAndUpdate(userId, { 
+        $inc: { coins: -checkout.coinsUsed } 
+      });
+    }
+
     const settings = await CoinSettings.findOne();
     if (settings) {
       const { purchaseThreshold, coinsPerThreshold } = settings;
 
-     
-      const thresholdsMet = Math.floor(order.total / purchaseThreshold);
+      const orderAmountForCoins = order.subtotal - order.discount - order.couponDiscount - order.coinDiscount;
+      const thresholdsMet = Math.floor(orderAmountForCoins / purchaseThreshold);
       const coinsEarned = thresholdsMet * coinsPerThreshold;
 
       if (coinsEarned > 0) {
@@ -57,7 +78,6 @@ exports.createOrder = async (req, res) => {
       await order.save();
     }
 
-    // ✅ Clear cart
     const updatedCart = await Cart.findByIdAndUpdate(
       cart._id, 
       { 
@@ -66,6 +86,9 @@ exports.createOrder = async (req, res) => {
           subtotal: 0, 
           discount: 0,
           couponDiscount: 0,
+          coinDiscount: 0,      
+          coinsUsed: 0,
+          deliveryCharge: 0,   
           total: 0
         },
         $unset: { appliedCoupon: "" }
@@ -73,10 +96,29 @@ exports.createOrder = async (req, res) => {
       { new: true } 
     );
 
+    await Checkout.findByIdAndUpdate(checkoutId, {
+      $set: {
+        subtotal: 0,
+        discount: 0,
+        couponDiscount: 0,
+        coinDiscount: 0,
+        coinsUsed: 0,
+        deliveryCharge: 0,    
+        total: 0,
+        status: 'completed'
+      }
+    });
+
+    
+    const updatedUser = await User.findById(userId).select('coins');
+
     res.status(201).json({ 
       message: 'Order created successfully', 
       order,
-      cart: updatedCart 
+      cart: updatedCart,
+      userCoins: updatedUser.coins,
+      coinsUsedForOrder: checkout.coinsUsed,
+      coinsEarned: order.coinsEarned || 0
     });
   } catch (err) {
     console.error(err);

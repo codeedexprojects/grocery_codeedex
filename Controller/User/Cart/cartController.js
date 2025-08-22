@@ -3,8 +3,68 @@ const Product = require('../../../Models/Admin/Products/productModel');
 const ComboOffer = require('../../../Models/Admin/ComboOffer/comboOfferModel');
 const Coupon = require("../../../Models/Admin/Coupon/couponModel");
 const CoinSettings = require('../../../Models/Admin/CoinSetting/coinSettingModel');
+const DeliveryCharge = require('../../../Models/Admin/DeliveryCharge/deliveryChargeModel');
 
-// Add to Cart - Updated with proper calculations
+// Helper function to calculate delivery charge
+async function calculateDeliveryCharge(orderAmount) {
+  try {
+    const rule = await DeliveryCharge.findOne({
+      minAmount: { $lte: orderAmount },
+      maxAmount: { $gte: orderAmount }
+    });
+    
+    return rule ? rule.charge : 0;
+  } catch (error) {
+    console.error('Error calculating delivery charge:', error);
+    return 0;
+  }
+}
+
+// Helper function to recalculate cart totals - UPDATED WITH DELIVERY CHARGE
+async function recalculateCartTotals(cart) {
+  cart.subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  let productDiscounts = 0;
+  
+  for (const item of cart.items) {
+    if (item.isCombo && item.comboOffer) {
+      const comboOffer = await ComboOffer.findById(item.comboOffer).populate('products.productId');
+      if (comboOffer) {
+        const originalPrice = comboOffer.products.reduce((sum, productItem) => {
+          const product = productItem.productId;
+          let price = product.price;
+          
+          if (productItem.weight) {
+            const weightStock = product.weightsAndStocks.find(
+              ws => ws.weight === productItem.weight && ws.measurm === productItem.measurm
+            );
+            if (weightStock) price = weightStock.weight_price;
+          }
+          
+          return sum + (price * productItem.quantity);
+        }, 0);
+        
+        const discountPerItem = originalPrice - item.price;
+        productDiscounts += discountPerItem * item.quantity;
+      }
+    }
+  }
+  
+  cart.discount = productDiscounts;
+  
+  
+  const amountAfterDiscounts = cart.subtotal - cart.discount - cart.couponDiscount;
+  
+  
+  cart.deliveryCharge = await calculateDeliveryCharge(amountAfterDiscounts);
+  
+  
+  cart.total = amountAfterDiscounts + cart.deliveryCharge;
+  
+  if (cart.total < 0) cart.total = 0;
+}
+
+// Add to Cart - Updated with delivery charge recalculation
 exports.addToCart = async (req, res) => {
   try {
     const { productId, comboOfferId, weight, measurm, quantity } = req.body;
@@ -22,7 +82,6 @@ exports.addToCart = async (req, res) => {
       const comboOffer = await ComboOffer.findById(comboOfferId).populate('products.productId');
       if (!comboOffer) return res.status(404).json({ message: 'Combo offer not found' });
       
-      // Calculate combo price
       let comboPrice = 0;
       const totalOriginalPrice = comboOffer.products.reduce((sum, item) => {
         const product = item.productId;
@@ -66,11 +125,11 @@ exports.addToCart = async (req, res) => {
         subtotal: 0,
         discount: 0,
         couponDiscount: 0,
+        deliveryCharge: 0,
         total: 0
       });
     }
 
-    
     if (comboOfferId) {
       const existingCombo = cart.items.find(
         item => item.comboOffer && item.comboOffer.toString() === comboOfferId
@@ -108,7 +167,6 @@ exports.addToCart = async (req, res) => {
       }
     }
 
-    // Recalculate cart totals
     await recalculateCartTotals(cart);
     await cart.save();
     
@@ -119,7 +177,7 @@ exports.addToCart = async (req, res) => {
   }
 };
 
-// Apply Coupon - Updated with proper calculations
+// Apply Coupon - Updated with delivery charge recalculation
 exports.applyCoupon = async (req, res) => {
   try {
     const { code } = req.body;
@@ -136,7 +194,6 @@ exports.applyCoupon = async (req, res) => {
 
     if (!coupon) return res.status(404).json({ message: "Invalid coupon" });
 
-    // Validate coupon
     if (new Date() > coupon.expiryDate) {
       return res.status(400).json({ message: "Coupon has expired" });
     }
@@ -149,7 +206,6 @@ exports.applyCoupon = async (req, res) => {
       return res.status(400).json({ message: "You have already used this coupon" });
     }
 
-    // Calculate applicable amount for coupon
     let applicableAmount = 0;
     cart.items.forEach(item => {
       const product = item.product;
@@ -170,7 +226,6 @@ exports.applyCoupon = async (req, res) => {
       return res.status(400).json({ message: "Coupon not applicable to these items" });
     }
 
-    // Calculate coupon discount
     let couponDiscount = 0;
     if (coupon.discountType === "percentage") {
       couponDiscount = (applicableAmount * coupon.discountValue) / 100;
@@ -178,7 +233,6 @@ exports.applyCoupon = async (req, res) => {
       couponDiscount = Math.min(applicableAmount, coupon.discountValue);
     }
 
-    // Update cart with coupon
     cart.couponDiscount = couponDiscount;
     cart.appliedCoupon = {
       code: coupon.code,
@@ -186,7 +240,6 @@ exports.applyCoupon = async (req, res) => {
       couponId: coupon._id
     };
 
-    // Recalculate totals
     await recalculateCartTotals(cart);
     await cart.save();
 
@@ -202,6 +255,7 @@ exports.applyCoupon = async (req, res) => {
         subtotal: cart.subtotal,
         discount: cart.discount,
         couponDiscount: cart.couponDiscount,
+        deliveryCharge: cart.deliveryCharge,
         total: cart.total
       }
     });
@@ -211,7 +265,7 @@ exports.applyCoupon = async (req, res) => {
   }
 };
 
-// Remove Coupon
+// Remove Coupon - Updated with delivery charge recalculation
 exports.removeCoupon = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -228,7 +282,6 @@ exports.removeCoupon = async (req, res) => {
     cart.appliedCoupon = undefined;
     cart.couponDiscount = 0;
 
-    // Recalculate totals
     await recalculateCartTotals(cart);
     await cart.save();
 
@@ -238,6 +291,7 @@ exports.removeCoupon = async (req, res) => {
         subtotal: cart.subtotal,
         discount: cart.discount,
         couponDiscount: cart.couponDiscount,
+        deliveryCharge: cart.deliveryCharge,
         total: cart.total
       }
     });
@@ -247,18 +301,16 @@ exports.removeCoupon = async (req, res) => {
   }
 };
 
-// Get Cart
+// Get Cart - Updated to include delivery charge
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Get user cart
     const cart = await Cart.findOne({ user: userId })
       .populate('items.product')
       .populate('items.comboOffer')
       .populate('appliedCoupon.couponId');
 
-    // Get coin settings (assuming you only have one settings doc)
     const coinSettings = await CoinSettings.findOne().sort({ createdAt: -1 });
 
     if (!cart) {
@@ -269,6 +321,7 @@ exports.getCart = async (req, res) => {
         subtotal: 0,
         discount: 0,
         couponDiscount: 0,
+        deliveryCharge: 0,
         total: 0,
         appliedCoupon: null,
         settings: coinSettings || null
@@ -287,7 +340,7 @@ exports.getCart = async (req, res) => {
   }
 };
 
-// Update Cart Item
+// Update Cart Item - Updated with delivery charge recalculation
 exports.updateCartItem = async (req, res) => {
   try {
     const { productId, weight, measurm, quantity } = req.body;
@@ -306,7 +359,6 @@ exports.updateCartItem = async (req, res) => {
 
     item.quantity = quantity;
     
-    // Recalculate totals
     await recalculateCartTotals(cart);
     await cart.save();
     
@@ -316,7 +368,7 @@ exports.updateCartItem = async (req, res) => {
   }
 };
 
-// Remove Cart Item
+// Remove Cart Item - Updated with delivery charge recalculation
 exports.removeCartItem = async (req, res) => {
   try {
     const { productId, weight, measurm } = req.body;
@@ -331,7 +383,6 @@ exports.removeCartItem = async (req, res) => {
              i.measurm === measurm)
     );
 
-    // Recalculate totals
     await recalculateCartTotals(cart);
     await cart.save();
     
@@ -340,44 +391,3 @@ exports.removeCartItem = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
-// Helper function to recalculate cart totals
-async function recalculateCartTotals(cart) {
-  // Calculate subtotal (sum of all items)
-  cart.subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  // Calculate product/combo discounts
-  let productDiscounts = 0;
-  
-  for (const item of cart.items) {
-    if (item.isCombo && item.comboOffer) {
-      const comboOffer = await ComboOffer.findById(item.comboOffer).populate('products.productId');
-      if (comboOffer) {
-        const originalPrice = comboOffer.products.reduce((sum, productItem) => {
-          const product = productItem.productId;
-          let price = product.price;
-          
-          if (productItem.weight) {
-            const weightStock = product.weightsAndStocks.find(
-              ws => ws.weight === productItem.weight && ws.measurm === productItem.measurm
-            );
-            if (weightStock) price = weightStock.weight_price;
-          }
-          
-          return sum + (price * productItem.quantity);
-        }, 0);
-        
-        const discountPerItem = originalPrice - item.price;
-        productDiscounts += discountPerItem * item.quantity;
-      }
-    }
-  }
-  
-  cart.discount = productDiscounts;
-  
-  // Calculate total (subtotal - all discounts)
-  cart.total = cart.subtotal - cart.discount - cart.couponDiscount;
-  
-  // Ensure total is not negative
-  if (cart.total < 0) cart.total = 0;
-}

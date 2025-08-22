@@ -13,10 +13,11 @@ const cartItemSchema = new mongoose.Schema({
 const cartSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   items: [cartItemSchema],
-  subtotal: { type: Number, default: 0 },        
-  discount: { type: Number, default: 0 },        
-  couponDiscount: { type: Number, default: 0 }, 
-  total: { type: Number, default: 0 },           
+  subtotal: { type: Number, default: 0 },
+  discount: { type: Number, default: 0 },
+  couponDiscount: { type: Number, default: 0 },
+  deliveryCharge: { type: Number, default: 0 },
+  total: { type: Number, default: 0 },
   appliedCoupon: {
     code: String,
     discount: Number,

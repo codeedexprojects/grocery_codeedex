@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
   referralCode: { type: String, unique: true },
   referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 
-  coins: { type: Number, default: 0 },   // total awarded coins
+  coins: { type: Number, default: 0 }, 
   coinProgress: { type: Number, default: 0 }, 
 
   role: { type: String, default: 'user' },
@@ -25,9 +25,9 @@ const userSchema = new mongoose.Schema({
 
   devices: [
     {
-      deviceName: String,     // e.g., "Chrome on Windows"
-      ip: String,             // user IP
-      lastLogin: Date         // when the user last logged in
+      deviceName: String,     
+      ip: String,            
+      lastLogin: Date         
     }
   ]
 }, { timestamps: true });

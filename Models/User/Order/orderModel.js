@@ -13,10 +13,14 @@ const orderItemSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   items: [orderItemSchema],
-  subtotal: { type: Number, required: true },       
-  discount: { type: Number, default: 0 },           
-  couponDiscount: { type: Number, default: 0 },    
-  total: { type: Number, required: true },        
+  subtotal: { type: Number, required: true },
+  discount: { type: Number, default: 0 },
+  couponDiscount: { type: Number, default: 0 },
+  coinDiscount: { type: Number, default: 0 },
+  deliveryCharge: { type: Number, default: 0 },
+  coinsUsed: { type: Number, default: 0 },
+  coinsEarned: { type: Number, default: 0 },
+  total: { type: Number, required: true },
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],

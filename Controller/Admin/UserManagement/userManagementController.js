@@ -13,9 +13,14 @@ exports.getAllUsers = async (req, res) => {
 
     const totalUsers = await User.countDocuments();
     const users = await User.find()
+      .populate({
+        path: 'referredBy',
+        select: 'name email number referralCode'
+      })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
+      
     res.status(200).json({
       totalUsers,
       currentPage: page,
@@ -32,23 +37,34 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await User.findById(id);
+    const user = await User.findById(id)
+      .populate({
+        path: 'referredBy',
+        select: 'name email number referralCode'
+      });
+      
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    
     const cart = await Cart.findOne({ user: id })
       .populate({
         path: 'items.product',
         select: 'name price offerPrice measurment images weightsAndStocks'
       });
+      
     const wishlist = await Wishlist.findOne({ user: id })
       .populate({
         path: 'items.product',
         select: 'name price offerPrice measurment images weightsAndStocks'
       });
 
+    // Get referral statistics for this user
+    const referralCount = await User.countDocuments({ referredBy: id });
+
     res.status(200).json({
       user,
+      referralCount,
       cart: cart || { items: [], totalPrice: 0 },
       wishlist: wishlist || { items: [] }
     });
@@ -68,7 +84,12 @@ exports.updateUser = async (req, res) => {
       id,
       { name, email, number, isVerified, status },
       { new: true, runValidators: true }
-    ).select('-otp -otpExpiresAt');
+    )
+    .populate({
+      path: 'referredBy',
+      select: 'name email number referralCode'
+    })
+    .select('-otp -otpExpiresAt');
 
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
@@ -115,7 +136,12 @@ exports.searchUsers = async (req, res) => {
         { name: { $regex: query, $options: "i" } },
         { number: { $regex: query, $options: "i" } }
       ]
-    }).select("-otp -otpExpiresAt");
+    })
+    .populate({
+      path: 'referredBy',
+      select: 'name email number referralCode'
+    })
+    .select("-otp -otpExpiresAt");
 
     res.status(200).json({ count: users.length, users });
   } catch (err) {
@@ -123,3 +149,4 @@ exports.searchUsers = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
