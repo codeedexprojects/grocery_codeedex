@@ -4,5 +4,4 @@ const couponController = require("../../../Controller/User/Coupon/couponControll
 
 router.get("/get", couponController.getAllCoupons);
 
-
 module.exports = router;
