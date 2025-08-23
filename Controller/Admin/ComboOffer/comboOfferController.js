@@ -4,19 +4,8 @@ const ComboCategory = require('../../../Models/Admin/ComboOffer/comboCategoryMod
 // Create Combo Offer
 exports.createComboOffer = async (req, res) => {
   try {
-    // For form data, req.body contains the text fields
-    const { category, name, description, discountType, discountValue, products, status } = req.body;
+    const { category, ...offerData } = req.body;
     
-    // Parse products if it's a string (from form data)
-    let parsedProducts = [];
-    if (products) {
-      try {
-        parsedProducts = typeof products === 'string' ? JSON.parse(products) : products;
-      } catch (parseError) {
-        return res.status(400).json({ message: 'Invalid products format' });
-      }
-    }
-
     // Verify category exists
     const categoryExists = await ComboCategory.findById(category);
     if (!categoryExists) {
@@ -24,19 +13,12 @@ exports.createComboOffer = async (req, res) => {
     }
 
     // Handle image upload
-    let imagePath = null;
     if (req.file) {
-      imagePath = req.file.path; 
+      offerData.image = req.file.path; 
     }
 
     const combo = new ComboOffer({
-      name,
-      description,
-      discountType,
-      discountValue,
-      products: parsedProducts,
-      status,
-      image: imagePath,
+      ...offerData,
       category
     });
     
