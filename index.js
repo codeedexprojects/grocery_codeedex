@@ -45,6 +45,7 @@ const userWalletRoutes = require('./Routes/User/Wallet/walletRoutes')
 const userNotificationRoutes = require('./Routes/User/Notification/notificationRoute')
 const userHomeSectionRoutes = require('./Routes/User/HomeSection/homeSectionRoutes')
 const userComboOfferRoutes = require('./Routes/User/ComboOffer/comboOfferRoutes')
+const userCouponRoutes = require('./Routes/User/Coupon/couponRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -84,6 +85,7 @@ app.use('/api/user/wallet',userWalletRoutes)
 app.use('/api/user/notificaion',userNotificationRoutes)
 app.use('/api/user/home-section', userHomeSectionRoutes);
 app.use('/api/user/combo-offer', userComboOfferRoutes);
+app.use('/api/user/coupon', userCouponRoutes);
 
 
 

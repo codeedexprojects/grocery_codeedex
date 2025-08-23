@@ -39,7 +39,7 @@ exports.createOrder = async (req, res) => {
         });
       }
     }
-    
+
     const order = new Order({
       user: userId,
       items: cart.items,
@@ -108,7 +108,6 @@ exports.createOrder = async (req, res) => {
         status: 'completed'
       }
     });
-
     
     const updatedUser = await User.findById(userId).select('coins');
 
