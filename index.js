@@ -46,6 +46,7 @@ const userNotificationRoutes = require('./Routes/User/Notification/notificationR
 const userHomeSectionRoutes = require('./Routes/User/HomeSection/homeSectionRoutes')
 const userComboOfferRoutes = require('./Routes/User/ComboOffer/comboOfferRoutes')
 const userCouponRoutes = require('./Routes/User/Coupon/couponRoutes')
+const userTimeSaleRoutes = require('./Routes/User/TimeSale/timeSaleRoutes')
 
 
 app.use('/api/admin/auth', adminAuthRoutes);
@@ -86,6 +87,7 @@ app.use('/api/user/notificaion',userNotificationRoutes)
 app.use('/api/user/home-section', userHomeSectionRoutes);
 app.use('/api/user/combo-offer', userComboOfferRoutes);
 app.use('/api/user/coupon', userCouponRoutes);
+app.use('/api/user/time-sale', userTimeSaleRoutes);
 
 
 
