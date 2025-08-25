@@ -302,6 +302,7 @@ exports.removeCoupon = async (req, res) => {
 };
 
 // Get Cart - Updated to include delivery charge
+// Get Cart - Updated to separate combo offers from regular items
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -318,6 +319,7 @@ exports.getCart = async (req, res) => {
         success: true,
         user: userId,
         items: [],
+        comboOffers: [],
         subtotal: 0,
         discount: 0,
         couponDiscount: 0,
@@ -328,11 +330,49 @@ exports.getCart = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    // Separate regular items and combo offers
+    const regularItems = cart.items.filter(item => !item.isCombo);
+    const comboItems = cart.items.filter(item => item.isCombo);
+
+    // Transform combo items to combo offers format
+    const comboOffers = comboItems.map(item => ({
+      _id: item.comboOffer._id,
+      name: item.comboOffer.name,
+      category: item.comboOffer.category,
+      image: item.comboOffer.image,
+      products: item.comboOffer.products,
+      discountType: item.comboOffer.discountType,
+      discountValue: item.comboOffer.discountValue,
+      startDate: item.comboOffer.startDate,
+      endDate: item.comboOffer.endDate,
+      isActive: item.comboOffer.isActive,
+      createdAt: item.comboOffer.createdAt,
+      updatedAt: item.comboOffer.updatedAt,
+      // Add cart-specific fields
+      quantity: item.quantity,
+      price: item.price,
+      totalPrice: item.price * item.quantity
+    }));
+
+    const response = {
       success: true,
-      ...cart.toObject(),
+      _id: cart._id,
+      user: cart.user,
+      items: regularItems,
+      comboOffers: comboOffers,
+      subtotal: cart.subtotal,
+      discount: cart.discount,
+      couponDiscount: cart.couponDiscount,
+      deliveryCharge: cart.deliveryCharge,
+      total: cart.total,
+      appliedCoupon: cart.appliedCoupon || null,
+      createdAt: cart.createdAt,
+      updatedAt: cart.updatedAt,
+      __v: cart.__v,
       settings: coinSettings || null
-    });
+    };
+
+    res.status(200).json(response);
 
   } catch (err) {
     console.error("Get Cart Error:", err);
