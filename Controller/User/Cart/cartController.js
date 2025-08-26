@@ -301,7 +301,6 @@ exports.removeCoupon = async (req, res) => {
   }
 };
 
-// Get Cart - Updated to include delivery charge
 // Get Cart - Updated to separate combo offers from regular items
 exports.getCart = async (req, res) => {
   try {
@@ -381,53 +380,142 @@ exports.getCart = async (req, res) => {
 };
 
 // Update Cart Item - Updated with delivery charge recalculation
-exports.updateCartItem = async (req, res) => {
+// Remove Cart Item - Updated with combo offer support and better error handling
+exports.removeCartItem = async (req, res) => {
   try {
-    const { productId, weight, measurm, quantity } = req.body;
+    const { productId, comboOfferId, weight, measurm } = req.body;
     const userId = req.user._id;
 
+    // Validate input - either productId or comboOfferId should be provided
+    if (!productId && !comboOfferId) {
+      return res.status(400).json({ 
+        message: 'Either productId or comboOfferId is required' 
+      });
+    }
+
     const cart = await Cart.findOne({ user: userId });
-    if (!cart) return res.status(404).json({ message: 'Cart not found' });
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
 
-    const item = cart.items.find(
-      i => i.product.toString() === productId &&
-           i.weight === weight &&
-           i.measurm === measurm
-    );
+    // Store original length to check if item was found
+    const originalLength = cart.items.length;
 
-    if (!item) return res.status(404).json({ message: 'Item not found' });
+    if (comboOfferId) {
+      // Remove combo offer item
+      cart.items = cart.items.filter(
+        item => !(item.isCombo && item.comboOffer && item.comboOffer.toString() === comboOfferId.toString())
+      );
+    } else {
+      // Remove regular product item
+      cart.items = cart.items.filter(
+        item => !(
+          !item.isCombo &&
+          item.product && 
+          item.product.toString() === productId.toString() &&
+          item.weight === weight &&
+          item.measurm === measurm
+        )
+      );
+    }
+
+    // Check if any item was actually removed
+    if (cart.items.length === originalLength) {
+      return res.status(404).json({ 
+        message: comboOfferId ? 'Combo offer not found in cart' : 'Product not found in cart' 
+      });
+    }
+
+    // If cart is empty after removal, reset all totals
+    if (cart.items.length === 0) {
+      cart.subtotal = 0;
+      cart.discount = 0;
+      cart.couponDiscount = 0;
+      cart.deliveryCharge = 0;
+      cart.total = 0;
+      cart.appliedCoupon = undefined;
+    } else {
+      // Recalculate totals for remaining items
+      await recalculateCartTotals(cart);
+    }
+
+    await cart.save();
+    
+    res.status(200).json({ 
+      message: comboOfferId ? 'Combo offer removed from cart' : 'Item removed from cart', 
+      cart 
+    });
+  } catch (err) {
+    console.error('Remove Cart Item Error:', err);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
+  }
+};
+
+// Also update the updateCartItem function to handle combo offers
+exports.updateCartItem = async (req, res) => {
+  try {
+    const { productId, comboOfferId, weight, measurm, quantity } = req.body;
+    const userId = req.user._id;
+
+    // Validate input
+    if (!productId && !comboOfferId) {
+      return res.status(400).json({ 
+        message: 'Either productId or comboOfferId is required' 
+      });
+    }
+
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({ 
+        message: 'Quantity must be at least 1' 
+      });
+    }
+
+    const cart = await Cart.findOne({ user: userId });
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+
+    let item;
+
+    if (comboOfferId) {
+      // Find combo offer item
+      item = cart.items.find(
+        i => i.isCombo && i.comboOffer && i.comboOffer.toString() === comboOfferId.toString()
+      );
+    } else {
+      // Find regular product item
+      item = cart.items.find(
+        i => !i.isCombo &&
+             i.product && 
+             i.product.toString() === productId.toString() &&
+             i.weight === weight &&
+             i.measurm === measurm
+      );
+    }
+
+    if (!item) {
+      return res.status(404).json({ 
+        message: comboOfferId ? 'Combo offer not found in cart' : 'Product not found in cart' 
+      });
+    }
 
     item.quantity = quantity;
     
     await recalculateCartTotals(cart);
     await cart.save();
     
-    res.status(200).json({ message: 'Cart updated', cart });
+    res.status(200).json({ 
+      message: comboOfferId ? 'Combo offer quantity updated' : 'Cart item updated', 
+      cart 
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// Remove Cart Item - Updated with delivery charge recalculation
-exports.removeCartItem = async (req, res) => {
-  try {
-    const { productId, weight, measurm } = req.body;
-    const userId = req.user._id;
-
-    const cart = await Cart.findOne({ user: userId });
-    if (!cart) return res.status(404).json({ message: 'Cart not found' });
-
-    cart.items = cart.items.filter(
-      i => !(i.product.toString() === productId &&
-             i.weight === weight &&
-             i.measurm === measurm)
-    );
-
-    await recalculateCartTotals(cart);
-    await cart.save();
-    
-    res.status(200).json({ message: 'Item removed', cart });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Update Cart Item Error:', err);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
   }
 };
