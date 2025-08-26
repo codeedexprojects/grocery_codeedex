@@ -216,18 +216,50 @@ exports.getCheckout = async (req, res) => {
       return res.status(404).json({ message: "No checkouts found" });
     }
 
-   
     const latestCart = checkout[0].cart;
+
+    // ✅ Separate regular items and combo offers (like getCart)
+    const regularItems = latestCart.items.filter(item => !item.isCombo);
+    const comboItems = latestCart.items.filter(item => item.isCombo);
+
+    const comboOffers = comboItems.map(item => ({
+      _id: item.comboOffer._id,
+      name: item.comboOffer.name,
+      category: item.comboOffer.category,
+      image: item.comboOffer.image,
+      products: item.comboOffer.products,
+      discountType: item.comboOffer.discountType,
+      discountValue: item.comboOffer.discountValue,
+      startDate: item.comboOffer.startDate,
+      endDate: item.comboOffer.endDate,
+      isActive: item.comboOffer.isActive,
+      createdAt: item.comboOffer.createdAt,
+      updatedAt: item.comboOffer.updatedAt,
+      // cart-specific
+      quantity: item.quantity,
+      price: item.price,
+      totalPrice: item.price * item.quantity
+    }));
+
+    // coin progress
     const coinProgress = await getCoinProgress(latestCart, user);
 
-    
     res.status(200).json({
-      checkout,
+      checkoutId: checkout[0]._id,
+      items: regularItems,
+      comboOffers,  // ✅ separate outside
+      subtotal: latestCart.subtotal,
+      discount: latestCart.discount,
+      couponDiscount: latestCart.couponDiscount,
+      deliveryCharge: latestCart.deliveryCharge,
+      total: latestCart.total,
+      appliedCoupon: latestCart.appliedCoupon || null,
       coinProgress,
       userCoins: user.coins,
+      createdAt: checkout[0].createdAt,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Checkout Error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

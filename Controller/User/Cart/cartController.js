@@ -379,7 +379,6 @@ exports.getCart = async (req, res) => {
   }
 };
 
-// Update Cart Item - Updated with delivery charge recalculation
 // Remove Cart Item - Updated with combo offer support and better error handling
 exports.removeCartItem = async (req, res) => {
   try {
