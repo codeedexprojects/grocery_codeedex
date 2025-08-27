@@ -519,3 +519,84 @@ exports.updateCartItem = async (req, res) => {
   }
 };
 
+// Get Applicable Coupons - Returns only coupons applicable to items in cart
+exports.getApplicableCoupons = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Get user's cart
+    const cart = await Cart.findOne({ user: userId })
+      .populate('items.product')
+      .populate('items.comboOffer');
+
+    // Get all active coupons
+    const allCoupons = await Coupon.find({ status: "active" })
+      .populate("applicableCategories", "name")
+      .populate("applicableProducts", "name")
+      .sort({ createdAt: -1 });
+
+    // If cart is empty, return empty array
+    if (!cart || cart.items.length === 0) {
+      return res.status(200).json({
+        success: true,
+        applicableCoupons: []
+      });
+    }
+
+    // Filter coupons to only those applicable to items in the cart
+    const applicableCoupons = [];
+    
+    for (const coupon of allCoupons) {
+      // Check if coupon is expired
+      if (new Date() > coupon.expiryDate) continue;
+      
+      // Check if usage limit reached
+      if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) continue;
+      
+      // Check if user has already used this one-time coupon
+      if (coupon.oneTimeUse && coupon.usedBy.includes(userId)) continue;
+      
+      let isApplicable = false;
+      
+      // Check if coupon applies to any item in cart
+      for (const item of cart.items) {
+        const product = item.product;
+        if (!product) continue;
+        
+        if (coupon.applicationType === "all") {
+          isApplicable = true;
+          break;
+        } else if (
+          coupon.applicationType === "category" &&
+          coupon.applicableCategories.some(cat => 
+            cat._id.equals(product.category)
+          )
+        ) {
+          isApplicable = true;
+          break;
+        } else if (
+          coupon.applicationType === "product" &&
+          coupon.applicableProducts.some(p => 
+            p._id.equals(product._id)
+          )
+        ) {
+          isApplicable = true;
+          break;
+        }
+      }
+      
+      if (isApplicable) {
+        applicableCoupons.push(coupon);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      applicableCoupons: applicableCoupons
+    });
+
+  } catch (err) {
+    console.error("Get Applicable Coupons Error:", err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
