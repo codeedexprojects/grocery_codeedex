@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const carouselController = require('../../../Controller/Admin/Carousel/carouselController');
 const { upload } = require('../../../Middlewares/multerMiddleware');
+const cloudinaryMapper = require('../../../Middlewares/cloudineryMaper')
 
 // Accept both images
 router.post(

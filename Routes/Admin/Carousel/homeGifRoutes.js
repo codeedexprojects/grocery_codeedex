@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const carouselController = require('../../../Controller/Admin/Carousel/homeGifController');
 const { upload } = require('../../../Middlewares/multerMiddleware');
+const cloudinaryMapper = require('../../../Middlewares/cloudinaryMapper')
+
 
 router.post(
   '/create',
@@ -9,6 +11,7 @@ router.post(
     { name: 'backgroundImage', maxCount: 1 },
     { name: 'gif', maxCount: 1 }
   ]),
+  cloudinaryMapper,
   carouselController.createCarousel
 );
 
@@ -20,6 +23,7 @@ router.patch(
     { name: 'backgroundImage', maxCount: 1 },
     { name: 'gif', maxCount: 1 }
   ]),
+  cloudinaryMapper,
   carouselController.updateCarousel
 );
 
