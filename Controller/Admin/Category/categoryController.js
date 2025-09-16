@@ -2,25 +2,26 @@ const Category = require('../../../Models/Admin/Category/categoryModel');
 
 const createCategory = async (req, res) => {
   try {
-    const { name, mainCategory, status } = req.body;
-    const image = req.file?.filename;
+    const { name, mainCategory, status, image: imageUrl } = req.body;
+
+    // ✅ ensure path is stored, not raw filename/base64
+    const image = req.file 
+      ? `uploads/${req.file.filename}` 
+      : imageUrl;
 
     if (!name || !mainCategory || !image) {
       return res.status(400).json({ message: 'Name, Main Category, and Image are required' });
     }
 
     const exists = await Category.findOne({ name });
-    if (exists) {
-      return res.status(400).json({ message: 'Category already exists' });
-    }
+    if (exists) return res.status(400).json({ message: 'Category already exists' });
 
     const category = new Category({ name, image, mainCategory, status });
     await category.save();
 
     res.status(201).json({ message: 'Category created successfully', category });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
