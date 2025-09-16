@@ -3,11 +3,7 @@ const Category = require('../../../Models/Admin/Category/categoryModel');
 const createCategory = async (req, res) => {
   try {
     const { name, mainCategory, status, image: imageUrl } = req.body;
-
-    // ✅ ensure path is stored, not raw filename/base64
-    const image = req.file 
-      ? `uploads/${req.file.filename}` 
-      : imageUrl;
+    const image = req.file?.filename || imageUrl;
 
     if (!name || !mainCategory || !image) {
       return res.status(400).json({ message: 'Name, Main Category, and Image are required' });
@@ -21,10 +17,9 @@ const createCategory = async (req, res) => {
 
     res.status(201).json({ message: 'Category created successfully', category });
   } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
-
 
 
 const getCategories = async (req, res) => {
