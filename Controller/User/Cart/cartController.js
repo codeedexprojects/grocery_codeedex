@@ -195,15 +195,15 @@ exports.applyCoupon = async (req, res) => {
     if (!coupon) return res.status(404).json({ message: "Invalid coupon" });
 
     if (new Date() > coupon.expiryDate) {
-      return res.status(400).json({ message: "Coupon has expired" });
+      return res.status(200).json({ message: "Coupon has expired" });
     }
 
     if (coupon.usageLimit > 0 && coupon.usedCount >= coupon.usageLimit) {
-      return res.status(400).json({ message: "Coupon usage limit reached" });
+      return res.status(200).json({ message: "Coupon usage limit reached" });
     }
 
     if (coupon.oneTimeUse && coupon.usedBy.includes(userId)) {
-      return res.status(400).json({ message: "You have already used this coupon" });
+      return res.status(200).json({ message: "You have already used this coupon" });
     }
 
     let applicableAmount = 0;
